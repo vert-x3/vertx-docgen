@@ -11,6 +11,7 @@ import com.sun.source.tree.Tree;
 import com.sun.source.util.DocTreeScanner;
 import com.sun.source.util.DocTrees;
 import com.sun.source.util.TreePath;
+import io.vertx.codegen.GenException;
 import io.vertx.codegen.annotations.GenModule;
 
 import javax.annotation.processing.AbstractProcessor;
@@ -26,6 +27,7 @@ import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -108,7 +110,17 @@ public class DocGenProcessor extends AbstractProcessor {
 
   private static final Pattern P = Pattern.compile("#(\\p{javaJavaIdentifierStart}(?:\\p{javaJavaIdentifierPart})*)(?:\\((.*)\\))?$");
 
+  private final LinkedList<PackageElement> stack = new LinkedList<>();
+
   private void process(StringBuilder buffer, PackageElement pkgElt) {
+
+    for (PackageElement stackElt : stack) {
+      if (pkgElt.getQualifiedName().equals(stackElt.getQualifiedName())) {
+        throw new GenException(stack.peekLast(), "Circular include");
+      }
+    }
+    stack.addLast(pkgElt);
+
     TreePath tp = docTrees.getPath(pkgElt);
     DocCommentTree doc = docTrees.getDocCommentTree(tp);
     DocTreeVisitor<Void, Void> visitor = new DocTreeScanner<Void, Void>() {
@@ -253,5 +265,6 @@ public class DocGenProcessor extends AbstractProcessor {
       }
     };
     doc.accept(visitor, null);
+    stack.removeLast();
   }
 }

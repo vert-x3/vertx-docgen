@@ -29,6 +29,11 @@ public class ModuleTest {
   }
 
   @Test
+  public void testIncludeCircular() throws Exception {
+    assertTrue(failDoc("io.vertx.test.includecircular").containsKey("io.vertx.test.includecircular"));
+  }
+
+  @Test
   public void testLinkToClass() throws Exception {
     assertEquals("abc[`TheClass`]", assertDoc("io.vertx.test.linktoclass"));
   }
