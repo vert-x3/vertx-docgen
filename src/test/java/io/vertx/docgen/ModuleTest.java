@@ -25,7 +25,7 @@ public class ModuleTest {
 
   @Test
   public void testFailInclude() throws Exception {
-    assertTrue(failDoc("io.vertx.test.failinclude").containsKey("io.vertx.test.failinclude"));
+    assertTrue(failDoc("io.vertx.test.includenonexisting").containsKey("io.vertx.test.includenonexisting"));
   }
 
   @Test
