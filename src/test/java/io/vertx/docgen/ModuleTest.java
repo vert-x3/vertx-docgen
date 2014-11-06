@@ -28,6 +28,11 @@ public class ModuleTest {
     assertTrue(failDoc("io.vertx.test.failinclude").containsKey("io.vertx.test.failinclude"));
   }
 
+  @Test
+  public void testLinkToClass() throws Exception {
+    assertEquals("abc[`TheClass`]", assertDoc("io.vertx.test.linktoclass"));
+  }
+
   private Map<String, String> failDoc(String pkg) throws Exception {
     Compiler compiler = buildCompiler(pkg);
     compiler.failCompile();

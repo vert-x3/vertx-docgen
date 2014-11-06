@@ -3,6 +3,7 @@ package io.vertx.docgen;
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.DocTreeVisitor;
+import com.sun.source.doctree.LinkTree;
 import com.sun.source.doctree.TextTree;
 import com.sun.source.doctree.UnknownInlineTagTree;
 import com.sun.source.util.DocTreeScanner;
@@ -83,19 +84,33 @@ public class DocGenProcessor extends AbstractProcessor {
     return false;
   }
 
+  protected String resolveLinkDoc(Element elt) {
+    return "abc";
+  }
+
   private void process(StringBuilder buffer, PackageElement pkgElt) {
     TreePath tp = docTrees.getPath(pkgElt);
     DocCommentTree doc = docTrees.getDocCommentTree(tp);
     DocTreeVisitor<Void, Void> visitor = new DocTreeScanner<Void, Void>() {
 
       @Override
-      public Void visitText(TextTree node, Void aVoid) {
-        buffer.append(node.getBody());
-        return super.visitText(node, aVoid);
+      public Void visitText(TextTree node, Void v) {
+        String body = node.getBody();
+        buffer.append(body);
+        return super.visitText(node, v);
       }
 
       @Override
-      public Void visitUnknownInlineTag(UnknownInlineTagTree node, Void aVoid) {
+      public Void visitLink(LinkTree node, Void v) {
+        String signature = node.getReference().getSignature();
+        TypeElement targetElt = processingEnv.getElementUtils().getTypeElement(signature);
+        String link = resolveLinkDoc(targetElt);
+        buffer.append(link).append("[`").append(targetElt.getSimpleName()).append("`]");
+        return super.visitLink(node, v);
+      }
+
+      @Override
+      public Void visitUnknownInlineTag(UnknownInlineTagTree node, Void v) {
         switch (node.getTagName()) {
           case "include":
             List<? extends DocTree> content = node.getContent();
@@ -107,7 +122,7 @@ public class DocGenProcessor extends AbstractProcessor {
             process(buffer, includedElt);
             break;
         }
-        return super.visitUnknownInlineTag(node, aVoid);
+        return super.visitUnknownInlineTag(node, v);
       }
     };
     doc.accept(visitor, null);
