@@ -143,17 +143,18 @@ public class DocGenProcessor extends AbstractProcessor {
           process(buffer, includedElt);
         } else {
           String link;
-          String name;
           if (resolvedElt instanceof TypeElement) {
             link = resolveLinkTypeDoc((TypeElement) resolvedElt);
-            name = resolvedElt.getSimpleName().toString();
           } else {
             link = resolveLinkMethodDoc((ExecutableElement) resolvedElt);
-            name = resolvedElt.getSimpleName().toString();
           }
-          buffer.append(link).append("[`").append(name).append("`]");
+          String label = render(node.getLabel()).trim();
+          if (label.length() == 0) {
+            label = resolvedElt.getSimpleName().toString();
+          }
+          buffer.append(link).append("[`").append(label).append("`]");
         }
-        return super.visitLink(node, v);
+        return v;
       }
 
       private TypeMirror resolveSignatureType(String name) {

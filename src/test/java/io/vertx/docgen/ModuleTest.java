@@ -85,6 +85,11 @@ public class ModuleTest {
     assertTrue(failDoc("io.vertx.test.linktomethodwithunresolvabletype").containsKey("io.vertx.test.linktomethodwithunresolvabletype"));
   }
 
+  @Test
+  public void testLinkWithLabel() throws Exception {
+    assertEquals("def[`the label value`]", assertDoc("io.vertx.test.linkwithlabel"));
+  }
+
   private Map<String, String> failDoc(String pkg) throws Exception {
     Compiler compiler = buildCompiler(pkg);
     compiler.failCompile();
