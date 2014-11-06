@@ -33,6 +33,11 @@ public class ModuleTest {
     assertEquals("abc[`TheClass`]", assertDoc("io.vertx.test.linktoclass"));
   }
 
+  @Test
+  public void testLinkToMethodMember() throws Exception {
+    assertEquals("def[`m`]", assertDoc("io.vertx.test.linktomethodmember"));
+  }
+
   private Map<String, String> failDoc(String pkg) throws Exception {
     Compiler compiler = buildCompiler(pkg);
     compiler.failCompile();

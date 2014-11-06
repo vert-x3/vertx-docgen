@@ -16,12 +16,14 @@ import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -84,8 +86,12 @@ public class DocGenProcessor extends AbstractProcessor {
     return false;
   }
 
-  protected String resolveLinkDoc(Element elt) {
+  protected String resolveLinkTypeDoc(TypeElement elt) {
     return "abc";
+  }
+
+  protected String resolveLinkMethodDoc(ExecutableElement elt) {
+    return "def";
   }
 
   private void process(StringBuilder buffer, PackageElement pkgElt) {
@@ -103,10 +109,41 @@ public class DocGenProcessor extends AbstractProcessor {
       @Override
       public Void visitLink(LinkTree node, Void v) {
         String signature = node.getReference().getSignature();
-        TypeElement targetElt = processingEnv.getElementUtils().getTypeElement(signature);
-        String link = resolveLinkDoc(targetElt);
-        buffer.append(link).append("[`").append(targetElt.getSimpleName()).append("`]");
+        Element resolvedElt = resolveLink(signature);
+        String link;
+        String name;
+        if (resolvedElt instanceof TypeElement) {
+          link = resolveLinkTypeDoc((TypeElement) resolvedElt);
+          name = resolvedElt.getSimpleName().toString();
+        } else {
+          link = resolveLinkMethodDoc((ExecutableElement) resolvedElt);
+          name = resolvedElt.getSimpleName().toString();
+        }
+        buffer.append(link).append("[`").append(name).append("`]");
         return super.visitLink(node, v);
+      }
+
+      private Element resolveLink(String signature) {
+        int hash = signature.indexOf('#');
+        String elementName;
+        if (hash >= 0) {
+          elementName = signature.substring(0, hash);
+          String after = signature.substring(hash + 1);
+          TypeElement targetElt = processingEnv.getElementUtils().getTypeElement(elementName);
+          for (Element memberElt : processingEnv.getElementUtils().getAllMembers(targetElt)) {
+            switch (memberElt.getKind()) {
+              case METHOD:
+                ExecutableElement methodElt = (ExecutableElement) memberElt;
+                if (methodElt.getSimpleName().toString().equals(after)) {
+                  return methodElt;
+                }
+                break;
+            }
+          }
+          return null;
+        } else {
+          return processingEnv.getElementUtils().getTypeElement(signature);
+        }
       }
 
       @Override
