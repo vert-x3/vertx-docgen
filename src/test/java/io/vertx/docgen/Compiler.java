@@ -1,7 +1,5 @@
 package io.vertx.docgen;
 
-import io.vertx.codegen.GenException;
-
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticCollector;
 import javax.tools.DiagnosticListener;

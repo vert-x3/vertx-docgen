@@ -140,7 +140,7 @@ public class DocGenProcessor extends AbstractProcessor {
         return super.visitLink(node, v);
       }
 
-      private TypeMirror parseType(String name) {
+      private TypeMirror resolveSignatureType(String name) {
         if (name.equals("boolean")) {
           return processingEnv.getTypeUtils().getPrimitiveType(TypeKind.BOOLEAN);
         } else if (name.equals("byte")) {
@@ -158,7 +158,7 @@ public class DocGenProcessor extends AbstractProcessor {
         } else if (name.equals("char")) {
           return processingEnv.getTypeUtils().getPrimitiveType(TypeKind.CHAR);
         } else if (name.endsWith("[]")) {
-          TypeMirror componentType = parseType(name.substring(0, name.length() - 2));
+          TypeMirror componentType = resolveSignatureType(name.substring(0, name.length() - 2));
           if (componentType != null) {
             return processingEnv.getTypeUtils().getArrayType(componentType);
           }
@@ -213,12 +213,9 @@ public class DocGenProcessor extends AbstractProcessor {
                   TypeMirror tm2  = methodElt.asType();
                   ExecutableType tm3  = (ExecutableType) processingEnv.getTypeUtils().erasure(tm2);
                   for (int i = 0;i < types.length;i++) {
-                    TypeMirror tm = tm3.getParameterTypes().get(i);
-                    TypeMirror a = parseType(types[i]);
-                    if (a == null) {
-                      throw new UnsupportedOperationException("handle me gracefully");
-                    }
-                    if (!processingEnv.getTypeUtils().isSameType(a, tm)) {
+                    TypeMirror t1 = tm3.getParameterTypes().get(i);
+                    TypeMirror t2 = resolveSignatureType(types[i]);
+                    if (t2 == null || !processingEnv.getTypeUtils().isSameType(t2, t1)) {
                       return false;
                     }
                   }
