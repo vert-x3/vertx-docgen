@@ -20,11 +20,11 @@ public class ModuleTest {
 
   @Test
   public void testIncludePkg() throws Exception {
-    assertEquals("before_includesub_contentsubafter_include", assertDoc("io.vertx.test.includepkg"));
+    assertEquals("before_includesub_contentafter_include", assertDoc("io.vertx.test.includepkg"));
   }
 
   @Test
-  public void testFailInclude() throws Exception {
+  public void testIncludeNonExisting() throws Exception {
     assertTrue(failDoc("io.vertx.test.includenonexisting").containsKey("io.vertx.test.includenonexisting"));
   }
 

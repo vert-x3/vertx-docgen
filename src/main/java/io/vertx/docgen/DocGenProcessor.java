@@ -5,7 +5,6 @@ import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.DocTreeVisitor;
 import com.sun.source.doctree.LinkTree;
 import com.sun.source.doctree.TextTree;
-import com.sun.source.doctree.UnknownInlineTagTree;
 import com.sun.source.tree.ImportTree;
 import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.Tree;
@@ -125,18 +124,23 @@ public class DocGenProcessor extends AbstractProcessor {
       public Void visitLink(LinkTree node, Void v) {
         String signature = node.getReference().getSignature();
         Element resolvedElt = resolveLink(signature);
-        String link;
-        String name;
         if (resolvedElt == null) {
           throw new DocGenException(pkgElt, "Could not resolve " + signature);
-        } else if (resolvedElt instanceof TypeElement) {
-          link = resolveLinkTypeDoc((TypeElement) resolvedElt);
-          name = resolvedElt.getSimpleName().toString();
+        } else if (resolvedElt instanceof PackageElement) {
+          PackageElement includedElt = (PackageElement) resolvedElt;
+          process(buffer, includedElt);
         } else {
-          link = resolveLinkMethodDoc((ExecutableElement) resolvedElt);
-          name = resolvedElt.getSimpleName().toString();
+          String link;
+          String name;
+          if (resolvedElt instanceof TypeElement) {
+            link = resolveLinkTypeDoc((TypeElement) resolvedElt);
+            name = resolvedElt.getSimpleName().toString();
+          } else {
+            link = resolveLinkMethodDoc((ExecutableElement) resolvedElt);
+            name = resolvedElt.getSimpleName().toString();
+          }
+          buffer.append(link).append("[`").append(name).append("`]");
         }
-        buffer.append(link).append("[`").append(name).append("`]");
         return super.visitLink(node, v);
       }
 
@@ -240,24 +244,12 @@ public class DocGenProcessor extends AbstractProcessor {
           }
           return null;
         } else {
-          return processingEnv.getElementUtils().getTypeElement(signature);
+          Element elt = processingEnv.getElementUtils().getTypeElement(signature);
+          if (elt == null) {
+            elt = processingEnv.getElementUtils().getPackageElement(signature);
+          }
+          return elt;
         }
-      }
-
-      @Override
-      public Void visitUnknownInlineTag(UnknownInlineTagTree node, Void v) {
-        switch (node.getTagName()) {
-          case "include":
-            List<? extends DocTree> content = node.getContent();
-            String target = render(content);
-            PackageElement includedElt = processingEnv.getElementUtils().getPackageElement(pkgElt.getQualifiedName() + "." + target);
-            if (includedElt == null) {
-              throw new DocGenException(pkgElt, "handle me ");
-            }
-            process(buffer, includedElt);
-            break;
-        }
-        return super.visitUnknownInlineTag(node, v);
       }
     };
     doc.accept(visitor, null);

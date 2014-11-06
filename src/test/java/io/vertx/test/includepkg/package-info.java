@@ -1,5 +1,5 @@
 /**
- * before_include{@include sub}after_include
+ * before_include{@link io.vertx.test.includepkg.sub}after_include
  */
 @GenModule(name = "includepkg")
 package io.vertx.test.includepkg;

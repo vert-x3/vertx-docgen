@@ -1,5 +1,5 @@
 /**
- * {@include non_existing}
+ * {@link non_existing}
  */
 @GenModule(name = "includenonexisting")
 package io.vertx.test.includenonexisting;
