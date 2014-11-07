@@ -115,6 +115,11 @@ public class ModuleTest {
     assertEquals("A\nB\nC", assertDoc("io.vertx.test.margin"));
   }
 
+  @Test
+  public void testCommentStructure() throws Exception {
+    assertEquals("the_first_sentence\n\nthe_body", assertDoc("io.vertx.test.commentstructure"));
+  }
+
   private Map<String, String> failDoc(String pkg) throws Exception {
     Compiler compiler = buildCompiler(pkg);
     compiler.failCompile();

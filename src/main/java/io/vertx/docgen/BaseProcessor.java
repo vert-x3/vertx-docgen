@@ -23,6 +23,9 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -71,7 +74,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
     if (failures.isEmpty()) {
       roundEnv.getElementsAnnotatedWith(GenModule.class).forEach(elt -> {
-        StringBuilder buffer = new StringBuilder();
+        StringWriter buffer = new StringWriter();
         PackageElement pkgElt = (PackageElement) elt;
         try {
           process(buffer, pkgElt);
@@ -113,7 +116,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
 
   private final LinkedList<PackageElement> stack = new LinkedList<>();
 
-  private void process(StringBuilder buffer, PackageElement pkgElt) {
+  private void process(Writer buffer, PackageElement pkgElt) {
 
     for (PackageElement stackElt : stack) {
       if (pkgElt.getQualifiedName().equals(stackElt.getQualifiedName())) {
@@ -122,14 +125,28 @@ public abstract class BaseProcessor extends AbstractProcessor {
     }
     stack.addLast(pkgElt);
 
+    DocWriter writer = new DocWriter(buffer);
+
     TreePath tp = docTrees.getPath(pkgElt);
     DocCommentTree doc = docTrees.getDocCommentTree(tp);
     DocTreeVisitor<Void, Void> visitor = new DocTreeScanner<Void, Void>() {
 
       @Override
+      public Void visitDocComment(DocCommentTree node, Void v) {
+        v = scan(node.getFirstSentence(), v);
+        List<? extends DocTree> body = node.getBody();
+        if (body.size() > 0) {
+          writer.append("\n\n");
+          writer.resetParagraph();
+          v = scan(body, v);
+        }
+        return v;
+      }
+
+      @Override
       public Void visitText(TextTree node, Void v) {
         String body = node.getBody();
-        buffer.append(body);
+        writer.append(body);
         return super.visitText(node, v);
       }
 
@@ -141,7 +158,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
           throw new DocGenException(pkgElt, "Could not resolve " + signature);
         } else if (resolvedElt instanceof PackageElement) {
           PackageElement includedElt = (PackageElement) resolvedElt;
-          process(buffer, includedElt);
+          process(writer, includedElt);
         } else {
           String link;
           switch (resolvedElt.getKind()) {
@@ -165,7 +182,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
           if (label.length() == 0) {
             label = resolvedElt.getSimpleName().toString();
           }
-          buffer.append("link:").append(link).append("[`").append(label).append("`]");
+          writer.append("link:").append(link).append("[`").append(label).append("`]");
         }
         return v;
       }
