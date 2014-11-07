@@ -89,7 +89,11 @@ public abstract class BaseProcessor extends AbstractProcessor {
             throw new UnsupportedOperationException("not implemented");
           }
         }
-        handleGen(pkgElt, buffer.toString());
+
+        // Normalize the buffer
+        String a = buffer.toString().replace("\n ", "\n");
+
+        handleGen(pkgElt, a);
       });
     }
     return false;

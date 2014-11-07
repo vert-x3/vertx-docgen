@@ -110,6 +110,11 @@ public class ModuleTest {
     assertEquals("link:method[`the label value`]", assertDoc("io.vertx.test.linkwithlabel"));
   }
 
+  @Test
+  public void testMargin() throws Exception {
+    assertEquals("A\nB\nC", assertDoc("io.vertx.test.margin"));
+  }
+
   private Map<String, String> failDoc(String pkg) throws Exception {
     Compiler compiler = buildCompiler(pkg);
     compiler.failCompile();
