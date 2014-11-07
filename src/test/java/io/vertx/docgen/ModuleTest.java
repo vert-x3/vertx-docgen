@@ -101,6 +101,11 @@ public class ModuleTest {
   }
 
   @Test
+  public void testLinkToSameNameConstructorAndMethod() throws Exception {
+    assertEquals("link:constructor[`<init>`]\nlink:constructor[`<init>`]\nlink:constructor[`<init>`]", assertDoc("io.vertx.test.linktosamenameconstructorandmethod"));
+  }
+
+  @Test
   public void testLinkWithLabel() throws Exception {
     assertEquals("link:method[`the label value`]", assertDoc("io.vertx.test.linkwithlabel"));
   }

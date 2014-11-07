@@ -5,8 +5,9 @@ package io.vertx.test.linktosamenamefieldandmethod;
  */
 public class TheClass {
 
-  public String member;
-
   public void member() {
   }
+
+  public String member;
+
 }

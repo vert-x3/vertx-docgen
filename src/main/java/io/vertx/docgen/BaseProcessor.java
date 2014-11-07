@@ -20,13 +20,17 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Name;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -35,6 +39,7 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -42,12 +47,16 @@ import java.util.regex.Pattern;
 public abstract class BaseProcessor extends AbstractProcessor {
 
   private DocTrees docTrees;
+  private Types typeUtils;
+  private Elements elementUtils;
   Map<String, String> failures = new HashMap<>();
 
   @Override
   public synchronized void init(ProcessingEnvironment processingEnv) {
     super.init(processingEnv);
     docTrees = DocTrees.instance(processingEnv);
+    typeUtils = processingEnv.getTypeUtils();
+    elementUtils = processingEnv.getElementUtils();
   }
 
   private String render(List<? extends DocTree> trees) {
@@ -165,31 +174,31 @@ public abstract class BaseProcessor extends AbstractProcessor {
 
       private TypeMirror resolveSignatureType(String name) {
         if (name.equals("boolean")) {
-          return processingEnv.getTypeUtils().getPrimitiveType(TypeKind.BOOLEAN);
+          return typeUtils.getPrimitiveType(TypeKind.BOOLEAN);
         } else if (name.equals("byte")) {
-          return processingEnv.getTypeUtils().getPrimitiveType(TypeKind.BYTE);
+          return typeUtils.getPrimitiveType(TypeKind.BYTE);
         } else if (name.equals("short")) {
-          return processingEnv.getTypeUtils().getPrimitiveType(TypeKind.SHORT);
+          return typeUtils.getPrimitiveType(TypeKind.SHORT);
         } else if (name.equals("int")) {
-          return processingEnv.getTypeUtils().getPrimitiveType(TypeKind.INT);
+          return typeUtils.getPrimitiveType(TypeKind.INT);
         } else if (name.equals("long")) {
-          return processingEnv.getTypeUtils().getPrimitiveType(TypeKind.LONG);
+          return typeUtils.getPrimitiveType(TypeKind.LONG);
         } else if (name.equals("float")) {
-          return processingEnv.getTypeUtils().getPrimitiveType(TypeKind.FLOAT);
+          return typeUtils.getPrimitiveType(TypeKind.FLOAT);
         } else if (name.equals("double")) {
-          return processingEnv.getTypeUtils().getPrimitiveType(TypeKind.DOUBLE);
+          return typeUtils.getPrimitiveType(TypeKind.DOUBLE);
         } else if (name.equals("char")) {
-          return processingEnv.getTypeUtils().getPrimitiveType(TypeKind.CHAR);
+          return typeUtils.getPrimitiveType(TypeKind.CHAR);
         } else if (name.endsWith("[]")) {
           TypeMirror componentType = resolveSignatureType(name.substring(0, name.length() - 2));
           if (componentType != null) {
-            return processingEnv.getTypeUtils().getArrayType(componentType);
+            return typeUtils.getArrayType(componentType);
           }
         } else {
           TypeElement typeElt;
           int index = name.indexOf('.');
           if (index >= 0) {
-            typeElt = processingEnv.getElementUtils().getTypeElement(name);
+            typeElt = elementUtils.getTypeElement(name);
           } else {
             typeElt = null;
             for (ImportTree importTree : tp.getCompilationUnit().getImports()) {
@@ -197,7 +206,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
               if (identifier instanceof MemberSelectTree) {
                 MemberSelectTree memberSelect = (MemberSelectTree) identifier;
                 if (name.equals(memberSelect.getIdentifier().toString())) {
-                  typeElt = processingEnv.getElementUtils().getTypeElement(memberSelect.getExpression() + "." + memberSelect.getIdentifier());
+                  typeElt = elementUtils.getTypeElement(memberSelect.getExpression() + "." + memberSelect.getIdentifier());
                   if (typeElt != null) {
                     break;
                   }
@@ -207,11 +216,11 @@ public abstract class BaseProcessor extends AbstractProcessor {
               }
             }
             if (typeElt == null) {
-              typeElt = processingEnv.getElementUtils().getTypeElement("java.lang." + name);
+              typeElt = elementUtils.getTypeElement("java.lang." + name);
             }
           }
           if (typeElt != null) {
-            return processingEnv.getTypeUtils().erasure(typeElt.asType());
+            return typeUtils.erasure(typeElt.asType());
           }
         }
         return null;
@@ -222,7 +231,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
         if (signatureMatcher.find()) {
           String memberName = signatureMatcher.group(1);
           String typeName = signature.substring(0, signatureMatcher.start());
-          TypeElement typeElt = processingEnv.getElementUtils().getTypeElement(typeName);
+          TypeElement typeElt = elementUtils.getTypeElement(typeName);
           Predicate<Element> memberMatcher;
           if (signatureMatcher.group(2) != null) {
             String t = signatureMatcher.group(2).trim();
@@ -239,7 +248,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
                 return false;
               };
             } else {
-              String[] types = t.split("\\s*,\\s*");
+              TypeMirror[] types = Stream.of(t.split("\\s*,\\s*")).map(this::resolveSignatureType).toArray(TypeMirror[]::new);
               memberMatcher = elt -> {
                 if (elt.getKind() == ElementKind.FIELD) {
                   VariableElement variableElt = (VariableElement) elt;
@@ -247,16 +256,19 @@ public abstract class BaseProcessor extends AbstractProcessor {
                     return true;
                   }
                 }
-                if (elt.getKind() == ElementKind.METHOD) {
-                  ExecutableElement methodElt = (ExecutableElement) elt;
-                  if (methodElt.getSimpleName().toString().equals(memberName) && types.length == methodElt.getParameters().size()) {
-                    TypeMirror tm2  = methodElt.asType();
-                    ExecutableType tm3  = (ExecutableType) processingEnv.getTypeUtils().erasure(tm2);
-                    for (int i = 0;i < types.length;i++) {
-                      TypeMirror t1 = tm3.getParameterTypes().get(i);
-                      TypeMirror t2 = resolveSignatureType(types[i]);
-                      if (t2 == null || !processingEnv.getTypeUtils().isSameType(t2, t1)) {
-                        return false;
+                ExecutableElement exeElt = (ExecutableElement) elt;
+                Name[] names = {typeElt.getSimpleName(),exeElt.getSimpleName()};
+                ElementKind[] kinds = {ElementKind.CONSTRUCTOR,ElementKind.METHOD};
+                next:
+                for (int i = 0;i < names.length;i++) {
+                  if (exeElt.getKind() == kinds[i] && names[i].toString().equals(memberName) && types.length == exeElt.getParameters().size()) {
+                    TypeMirror tm2  = exeElt.asType();
+                    ExecutableType tm3  = (ExecutableType) typeUtils.erasure(tm2);
+                    for (int j = 0;j < types.length;j++) {
+                      TypeMirror t1 = tm3.getParameterTypes().get(j);
+                      TypeMirror t2 = types[j];
+                      if (t2 == null || !typeUtils.isSameType(t2, t1)) {
+                        continue next;
                       }
                     }
                     return true;
@@ -276,22 +288,19 @@ public abstract class BaseProcessor extends AbstractProcessor {
               return false;
             };
           }
-          for (Element memberElt : processingEnv.getElementUtils().getAllMembers(typeElt)) {
-            switch (memberElt.getKind()) {
-              case CONSTRUCTOR:
-              case FIELD:
-              case METHOD:
-                if (memberMatcher.test(memberElt)) {
-                  return memberElt;
-                }
-                break;
+          // The order of kinds is important
+          for (ElementKind kind : Arrays.asList(ElementKind.FIELD, ElementKind.CONSTRUCTOR, ElementKind.METHOD)) {
+            for (Element memberElt : elementUtils.getAllMembers(typeElt)) {
+              if(memberElt.getKind() == kind && memberMatcher.test(memberElt)) {
+                return memberElt;
+              }
             }
           }
           return null;
         } else {
-          Element elt = processingEnv.getElementUtils().getTypeElement(signature);
+          Element elt = elementUtils.getTypeElement(signature);
           if (elt == null) {
-            elt = processingEnv.getElementUtils().getPackageElement(signature);
+            elt = elementUtils.getPackageElement(signature);
           }
           return elt;
         }
