@@ -1,8 +1,8 @@
-package test.proj;
+package test.proj.foofeature;
 
 import java.util.Set;
 
-public class MyApi {
+public class FooApi {
 
   public String myField;
 
