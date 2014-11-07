@@ -39,6 +39,11 @@ public class ModuleTest {
   }
 
   @Test
+  public void testLinkToField() throws Exception {
+    assertEquals("link:ghi[`f1`]", assertDoc("io.vertx.test.linktofield"));
+  }
+
+  @Test
   public void testLinkToMethodMember() throws Exception {
     assertEquals("link:def[`m`]", assertDoc("io.vertx.test.linktomethodmember"));
   }
@@ -83,6 +88,11 @@ public class ModuleTest {
   @Test
   public void testLinkToMethodWithUnresolvableType() throws Exception {
     assertTrue(failDoc("io.vertx.test.linktomethodwithunresolvabletype").containsKey("io.vertx.test.linktomethodwithunresolvabletype"));
+  }
+
+  @Test
+  public void testLinkToSameNameFieldAndMethod() throws Exception {
+    assertEquals("link:ghi[`member`]\nlink:def[`member`]", assertDoc("io.vertx.test.linktosamenamefieldandmethod"));
   }
 
   @Test

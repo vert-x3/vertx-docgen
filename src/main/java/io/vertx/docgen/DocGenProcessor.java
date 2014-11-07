@@ -4,6 +4,7 @@ import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.TypeMirror;
 import java.io.File;
@@ -63,6 +64,12 @@ public class DocGenProcessor extends BaseProcessor {
     return link + anchor;
   }
 
+  @Override
+  protected String resolveLinkFieldDoc(VariableElement elt) {
+    TypeElement typeElt = (TypeElement) elt.getEnclosingElement();
+    String link = resolveLinkTypeDoc(typeElt);
+    return link + "#" + elt.getSimpleName();
+  }
 
   private void write(File dir, PackageElement moduleElt, String content) {
     try {

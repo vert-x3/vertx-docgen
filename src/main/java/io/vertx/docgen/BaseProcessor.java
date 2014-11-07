@@ -18,9 +18,11 @@ import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
@@ -96,6 +98,8 @@ public abstract class BaseProcessor extends AbstractProcessor {
 
   protected abstract String resolveLinkMethodDoc(ExecutableElement elt);
 
+  protected abstract String resolveLinkFieldDoc(VariableElement elt);
+
   private static final Pattern P = Pattern.compile("#(\\p{javaJavaIdentifierStart}(?:\\p{javaJavaIdentifierPart})*)(?:\\((.*)\\))?$");
 
   private final LinkedList<PackageElement> stack = new LinkedList<>();
@@ -133,8 +137,10 @@ public abstract class BaseProcessor extends AbstractProcessor {
           String link;
           if (resolvedElt instanceof TypeElement) {
             link = resolveLinkTypeDoc((TypeElement) resolvedElt);
-          } else {
+          } else if (resolvedElt instanceof ExecutableElement) {
             link = resolveLinkMethodDoc((ExecutableElement) resolvedElt);
+          } else {
+            link = resolveLinkFieldDoc((VariableElement) resolvedElt);
           }
           String label = render(node.getLabel()).trim();
           if (label.length() == 0) {
@@ -200,45 +206,58 @@ public abstract class BaseProcessor extends AbstractProcessor {
       }
 
       private Element resolveLink(String signature) {
-        Matcher m = P.matcher(signature);
-        String elementName;
-        if (m.find()) {
-          String methodName = m.group(1);
-          elementName = signature.substring(0, m.start());
-          TypeElement targetElt = processingEnv.getElementUtils().getTypeElement(elementName);
-          Predicate<ExecutableElement> matcher;
-          if (m.group(2) != null) {
-            String t = m.group(2).trim();
+        Matcher signatureMatcher = P.matcher(signature);
+        if (signatureMatcher.find()) {
+          String memberName = signatureMatcher.group(1);
+          String typeName = signature.substring(0, signatureMatcher.start());
+          TypeElement targetElt = processingEnv.getElementUtils().getTypeElement(typeName);
+          Predicate<Element> memberMatcher;
+          if (signatureMatcher.group(2) != null) {
+            String t = signatureMatcher.group(2).trim();
             if (t.length() == 0) {
-              matcher = methodElt -> methodElt.getSimpleName().toString().equals(methodName) && methodElt.getParameters().isEmpty();
+              memberMatcher = elt -> {
+                if (elt.getKind() == ElementKind.METHOD) {
+                  ExecutableElement methodElt = (ExecutableElement) elt;
+                  return methodElt.getSimpleName().toString().equals(memberName) && methodElt.getParameters().isEmpty();
+                }
+                return false;
+              };
             } else {
               String[] types = t.split("\\s*,\\s*");
-              matcher = methodElt -> {
-                if (methodElt.getSimpleName().toString().equals(methodName) && types.length == methodElt.getParameters().size()) {
-                  TypeMirror tm2  = methodElt.asType();
-                  ExecutableType tm3  = (ExecutableType) processingEnv.getTypeUtils().erasure(tm2);
-                  for (int i = 0;i < types.length;i++) {
-                    TypeMirror t1 = tm3.getParameterTypes().get(i);
-                    TypeMirror t2 = resolveSignatureType(types[i]);
-                    if (t2 == null || !processingEnv.getTypeUtils().isSameType(t2, t1)) {
-                      return false;
-                    }
+              memberMatcher = elt -> {
+                if (elt.getKind() == ElementKind.FIELD) {
+                  VariableElement variableElt = (VariableElement) elt;
+                  if (variableElt.getSimpleName().toString().equals(memberName)) {
+                    return true;
                   }
-                  return true;
-                } else {
-                  return false;
                 }
+                if (elt.getKind() == ElementKind.METHOD) {
+                  ExecutableElement methodElt = (ExecutableElement) elt;
+                  if (methodElt.getSimpleName().toString().equals(memberName) && types.length == methodElt.getParameters().size()) {
+                    TypeMirror tm2  = methodElt.asType();
+                    ExecutableType tm3  = (ExecutableType) processingEnv.getTypeUtils().erasure(tm2);
+                    for (int i = 0;i < types.length;i++) {
+                      TypeMirror t1 = tm3.getParameterTypes().get(i);
+                      TypeMirror t2 = resolveSignatureType(types[i]);
+                      if (t2 == null || !processingEnv.getTypeUtils().isSameType(t2, t1)) {
+                        return false;
+                      }
+                    }
+                    return true;
+                  }
+                }
+                return false;
               };
             }
           } else {
-            matcher = methodElt -> methodElt.getSimpleName().toString().equals(methodName);
+            memberMatcher = methodElt -> methodElt.getSimpleName().toString().equals(memberName);
           }
           for (Element memberElt : processingEnv.getElementUtils().getAllMembers(targetElt)) {
             switch (memberElt.getKind()) {
+              case FIELD:
               case METHOD:
-                ExecutableElement methodElt = (ExecutableElement) memberElt;
-                if (matcher.test(methodElt)) {
-                  return methodElt;
+                if (memberMatcher.test(memberElt)) {
+                  return memberElt;
                 }
                 break;
             }
