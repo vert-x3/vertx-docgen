@@ -18,6 +18,8 @@ The `{@link }` Javadoc tag creates a link to the Javadoc of a program element wh
 
 ## Example
 
+See the nested _test_proj_ maven project.
+
 Given the two files:
 
 ```
