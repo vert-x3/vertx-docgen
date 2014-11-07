@@ -1,5 +1,5 @@
 /**
- * The great documentation
+ * = The great project
  *
  * {@link test.proj.foofeature}
  *

@@ -43,6 +43,26 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>org.asciidoctor</groupId>
+        <artifactId>asciidoctor-maven-plugin</artifactId>
+        <version>1.5.0</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>process-asciidoc</goal>
+            </goals>
+            <configuration>
+              <sourceDirectory>${project.build.directory}/asciidoc</sourceDirectory>
+              <sourceDocumentName>test.proj.adoc</sourceDocumentName>
+              <outputDirectory>${project.build.directory}/site</outputDirectory>
+              <backend>html</backend>
+              <doctype>book</doctype>
+            </configuration>
+            <phase>process-classes</phase>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
     <pluginManagement>
       <plugins>
@@ -61,7 +81,7 @@
               <id>default-compile</id>
               <configuration>
                 <compilerArgs>
-                  <arg>-Adocgen.output=${project.build.directory}/site</arg>
+                  <arg>-Adocgen.output=${project.build.directory}/asciidoc</arg>
                 </compilerArgs>
               </configuration>
             </execution>
