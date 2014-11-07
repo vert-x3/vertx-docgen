@@ -21,17 +21,22 @@ public class TestGenProcessor extends BaseProcessor {
 
   @Override
   protected String resolveLinkTypeDoc(TypeElement elt) {
-    return "abc";
+    return "type";
+  }
+
+  @Override
+  protected String resolveLinkConstructorDoc(ExecutableElement elt) {
+    return "constructor";
   }
 
   @Override
   protected String resolveLinkMethodDoc(ExecutableElement elt) {
-    return "def";
+    return "method";
   }
 
   @Override
   protected String resolveLinkFieldDoc(VariableElement elt) {
-    return "ghi";
+    return "field";
   }
 
   @Override

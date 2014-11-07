@@ -96,6 +96,8 @@ public abstract class BaseProcessor extends AbstractProcessor {
 
   protected abstract String resolveLinkTypeDoc(TypeElement elt);
 
+  protected abstract String resolveLinkConstructorDoc(ExecutableElement elt);
+
   protected abstract String resolveLinkMethodDoc(ExecutableElement elt);
 
   protected abstract String resolveLinkFieldDoc(VariableElement elt);
@@ -135,12 +137,22 @@ public abstract class BaseProcessor extends AbstractProcessor {
           process(buffer, includedElt);
         } else {
           String link;
-          if (resolvedElt instanceof TypeElement) {
-            link = resolveLinkTypeDoc((TypeElement) resolvedElt);
-          } else if (resolvedElt instanceof ExecutableElement) {
-            link = resolveLinkMethodDoc((ExecutableElement) resolvedElt);
-          } else {
-            link = resolveLinkFieldDoc((VariableElement) resolvedElt);
+          switch (resolvedElt.getKind()) {
+            case CLASS:
+            case INTERFACE:
+              link = resolveLinkTypeDoc((TypeElement) resolvedElt);
+              break;
+            case METHOD:
+              link = resolveLinkMethodDoc((ExecutableElement) resolvedElt);
+              break;
+            case CONSTRUCTOR:
+              link = resolveLinkConstructorDoc((ExecutableElement) resolvedElt);
+              break;
+            case FIELD:
+              link = resolveLinkFieldDoc((VariableElement) resolvedElt);
+              break;
+            default:
+              throw new UnsupportedOperationException("Not yet implemented " + resolvedElt + " with kind " + resolvedElt.getKind());
           }
           String label = render(node.getLabel()).trim();
           if (label.length() == 0) {
@@ -210,12 +222,16 @@ public abstract class BaseProcessor extends AbstractProcessor {
         if (signatureMatcher.find()) {
           String memberName = signatureMatcher.group(1);
           String typeName = signature.substring(0, signatureMatcher.start());
-          TypeElement targetElt = processingEnv.getElementUtils().getTypeElement(typeName);
+          TypeElement typeElt = processingEnv.getElementUtils().getTypeElement(typeName);
           Predicate<Element> memberMatcher;
           if (signatureMatcher.group(2) != null) {
             String t = signatureMatcher.group(2).trim();
             if (t.length() == 0) {
               memberMatcher = elt -> {
+                if (elt.getKind() == ElementKind.CONSTRUCTOR) {
+                  ExecutableElement methodElt = (ExecutableElement) elt;
+                  return typeElt.getSimpleName().toString().equals(memberName) && methodElt.getParameters().isEmpty();
+                }
                 if (elt.getKind() == ElementKind.METHOD) {
                   ExecutableElement methodElt = (ExecutableElement) elt;
                   return methodElt.getSimpleName().toString().equals(memberName) && methodElt.getParameters().isEmpty();
@@ -250,10 +266,19 @@ public abstract class BaseProcessor extends AbstractProcessor {
               };
             }
           } else {
-            memberMatcher = methodElt -> methodElt.getSimpleName().toString().equals(memberName);
+            memberMatcher = elt -> {
+              if (elt.getKind() == ElementKind.CONSTRUCTOR && typeElt.getSimpleName().toString().equals(memberName)) {
+                return true;
+              }
+              if ((elt.getKind() == ElementKind.METHOD || elt.getKind() == ElementKind.FIELD) && elt.getSimpleName().toString().equals(memberName)) {
+                return true;
+              }
+              return false;
+            };
           }
-          for (Element memberElt : processingEnv.getElementUtils().getAllMembers(targetElt)) {
+          for (Element memberElt : processingEnv.getElementUtils().getAllMembers(typeElt)) {
             switch (memberElt.getKind()) {
+              case CONSTRUCTOR:
               case FIELD:
               case METHOD:
                 if (memberMatcher.test(memberElt)) {

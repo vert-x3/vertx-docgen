@@ -46,11 +46,20 @@ public class DocGenProcessor extends BaseProcessor {
     return "apidocs/" + elt.getQualifiedName().toString().replace('.', '/') + ".html";
   }
 
+  @Override
+  protected String resolveLinkConstructorDoc(ExecutableElement elt) {
+    return resolveLinkExecutableDoc(elt, elt.getEnclosingElement().getSimpleName().toString());
+  }
+
   protected String resolveLinkMethodDoc(ExecutableElement elt) {
+    return resolveLinkExecutableDoc(elt, elt.getSimpleName().toString());
+  }
+
+  private String resolveLinkExecutableDoc(ExecutableElement elt, String name) {
     TypeElement typeElt = (TypeElement) elt.getEnclosingElement();
     String link = resolveLinkTypeDoc(typeElt);
     StringBuilder anchor = new StringBuilder("#");
-    anchor.append(elt.getSimpleName()).append('-');
+    anchor.append(name).append('-');
     TypeMirror type  = elt.asType();
     ExecutableType methodType  = (ExecutableType) processingEnv.getTypeUtils().erasure(type);
     List<? extends TypeMirror> parameterTypes = methodType.getParameterTypes();
