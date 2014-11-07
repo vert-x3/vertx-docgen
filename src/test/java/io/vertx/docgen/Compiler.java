@@ -26,7 +26,7 @@ public class Compiler {
 
   final File dest;
   final Collection<File> sources;
-  final DocGenProcessor processor;
+  final TestGenProcessor processor;
   final StandardJavaFileManager fileManager;
   final DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
   final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
@@ -36,7 +36,7 @@ public class Compiler {
     this.fileManager = compiler.getStandardFileManager(diagnostics, Locale.ENGLISH, Charset.forName("UTF-8"));
     this.dest = dest;
     this.sources = sources;
-    this.processor = new DocGenProcessor();
+    this.processor = new TestGenProcessor();
   }
 
   void failCompile() {

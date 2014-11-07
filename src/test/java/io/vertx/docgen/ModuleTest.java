@@ -35,48 +35,48 @@ public class ModuleTest {
 
   @Test
   public void testLinkToClass() throws Exception {
-    assertEquals("abc[`TheClass`]", assertDoc("io.vertx.test.linktoclass"));
+    assertEquals("link:abc[`TheClass`]", assertDoc("io.vertx.test.linktoclass"));
   }
 
   @Test
   public void testLinkToMethodMember() throws Exception {
-    assertEquals("def[`m`]", assertDoc("io.vertx.test.linktomethodmember"));
+    assertEquals("link:def[`m`]", assertDoc("io.vertx.test.linktomethodmember"));
   }
 
   @Test
   public void testLinkToMethod() throws Exception {
     assertEquals(
-        "def[`m1`]\n" +
-        "def[`m1`]\n" +
-        "def[`m2`]\n" +
-        "def[`m2`]\n" +
-        "def[`m2`]\n" +
-        "def[`m3`]\n" +
-        "def[`m3`]\n" +
-        "def[`m3`]\n" +
-        "def[`m4`]\n" +
-        "def[`m5`]\n" +
-        "def[`m6`]\n" +
-        "def[`m7`]\n" +
-        "def[`m8`]\n" +
-        "def[`m9`]\n" +
-        "def[`m10`]\n" +
-        "def[`m11`]\n" +
-        "def[`m12`]\n" +
-        "def[`m13`]\n" +
-        "def[`m14`]\n" +
-        "def[`m15`]\n" +
-        "def[`m16`]\n" +
-        "def[`m17`]" +
+        "link:def[`m1`]\n" +
+        "link:def[`m1`]\n" +
+        "link:def[`m2`]\n" +
+        "link:def[`m2`]\n" +
+        "link:def[`m2`]\n" +
+        "link:def[`m3`]\n" +
+        "link:def[`m3`]\n" +
+        "link:def[`m3`]\n" +
+        "link:def[`m4`]\n" +
+        "link:def[`m5`]\n" +
+        "link:def[`m6`]\n" +
+        "link:def[`m7`]\n" +
+        "link:def[`m8`]\n" +
+        "link:def[`m9`]\n" +
+        "link:def[`m10`]\n" +
+        "link:def[`m11`]\n" +
+        "link:def[`m12`]\n" +
+        "link:def[`m13`]\n" +
+        "link:def[`m14`]\n" +
+        "link:def[`m15`]\n" +
+        "link:def[`m16`]\n" +
+        "link:def[`m17`]" +
         "", assertDoc("io.vertx.test.linktomethod"));
   }
 
   @Test
   public void testLinkToMethodWithSimpleTypeName() throws Exception {
     assertEquals(
-        "def[`m1`]\n" +
-        "def[`m2`]\n" +
-        "def[`m3`]" +
+        "link:def[`m1`]\n" +
+        "link:def[`m2`]\n" +
+        "link:def[`m3`]" +
         "", assertDoc("io.vertx.test.linktomethodwithsimpletypename"));
   }
 
@@ -87,7 +87,7 @@ public class ModuleTest {
 
   @Test
   public void testLinkWithLabel() throws Exception {
-    assertEquals("def[`the label value`]", assertDoc("io.vertx.test.linkwithlabel"));
+    assertEquals("link:def[`the label value`]", assertDoc("io.vertx.test.linkwithlabel"));
   }
 
   private Map<String, String> failDoc(String pkg) throws Exception {
