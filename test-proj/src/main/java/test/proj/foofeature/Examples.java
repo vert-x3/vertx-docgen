@@ -1,6 +1,6 @@
 package test.proj.foofeature;
 
-import io.vertx.docgen.Example;
+import io.vertx.docgen.Source;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Set;
@@ -8,7 +8,7 @@ import java.util.HashSet;
 
 import java.lang.UnsupportedOperationException;
 
-@Example
+@Source
 public class Examples {
 
   private FooApi getFoo() {

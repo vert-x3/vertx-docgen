@@ -14,7 +14,7 @@ documentatin modular and split the various chapters of the document accross the 
 
 ### Source inclusion
 
-The `{@link }` Javadoc tag includes the referenced elements when this element is annotated with a `io.vertx.docgen.Example`
+The `{@link }` Javadoc tag includes the referenced elements when this element is annotated with a `io.vertx.docgen.Source`
 annotation (otherwise it will just create a link).
 
 ### Referencing program elements

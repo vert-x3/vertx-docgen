@@ -10,9 +10,7 @@ import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.Name;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
@@ -149,7 +147,7 @@ class Helper {
    * @return true when the checked element is an example
    */
   boolean isExample(Element elt) {
-    return elt.getAnnotation(Example.class) != null || elt.getEnclosingElement() != null && isExample(elt.getEnclosingElement());
+    return elt.getAnnotation(Source.class) != null || elt.getEnclosingElement() != null && isExample(elt.getEnclosingElement());
   }
 
   /**

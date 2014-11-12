@@ -1,6 +1,6 @@
 package io.vertx.test.linktoexamplemethod;
 
-import io.vertx.docgen.Example;
+import io.vertx.docgen.Source;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -8,7 +8,7 @@ import java.util.Map;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-@Example
+@Source
 public class TheExample {
 
   public void someMethod() {
