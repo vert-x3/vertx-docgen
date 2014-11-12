@@ -39,6 +39,9 @@
             <goals>
               <goal>javadoc-no-fork</goal>
             </goals>
+            <configuration>
+              <additionalparam>-Xdoclint:none</additionalparam>
+            </configuration>
             <phase>process-classes</phase>
           </execution>
         </executions>

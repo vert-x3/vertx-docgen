@@ -9,6 +9,13 @@
  * * item 2
  * * item 3
  *
+ * Some code:
+ *
+ * [source,java]
+ * ----
+ * {@link test.proj.foofeature.Examples#fooExample}
+ * ----
+ *
  */
 package test.proj.foofeature;
 

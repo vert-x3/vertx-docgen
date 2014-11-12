@@ -136,4 +136,14 @@ class Helper {
       }
     };
   }
+
+  /**
+   * Check the element is an example or not.
+   *
+   * @param elt the elt to check
+   * @return true when the checked element is an example
+   */
+  boolean isExample(Element elt) {
+    return elt.getAnnotation(Example.class) != null || elt.getEnclosingElement() != null && isExample(elt.getEnclosingElement());
+  }
 }

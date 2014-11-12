@@ -120,6 +120,16 @@ public class ModuleTest {
     assertEquals("the_first_sentence\n\nthe_body", assertDoc("io.vertx.test.commentstructure"));
   }
 
+  @Test
+  public void testFoo() throws Exception {
+    assertEquals(
+        "Map<String, String> map = new HashMap<>();\n" +
+        "// Some comment\n" +
+        "\n" +
+        "map.put(\"abc\", \"def\");\n" +
+        "map.get(\"abc\");", assertDoc("io.vertx.test.linktoexamplemethod"));
+  }
+
   private Map<String, String> failDoc(String pkg) throws Exception {
     Compiler compiler = buildCompiler(pkg);
     compiler.failCompile();

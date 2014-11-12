@@ -5,6 +5,11 @@ import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.DocTreeVisitor;
 import com.sun.source.doctree.LinkTree;
 import com.sun.source.doctree.TextTree;
+import com.sun.source.tree.BlockTree;
+import com.sun.source.tree.CompilationUnitTree;
+import com.sun.source.tree.LineMap;
+import com.sun.source.tree.MethodTree;
+import com.sun.source.tree.StatementTree;
 import com.sun.source.util.DocTreeScanner;
 import com.sun.source.util.DocTrees;
 import com.sun.source.util.TreePath;
@@ -23,14 +28,20 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
+import javax.tools.JavaFileObject;
+import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.Reader;
+import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
@@ -160,6 +171,70 @@ public abstract class BaseProcessor extends AbstractProcessor {
           PackageElement includedElt = (PackageElement) resolvedElt;
           process(writer, includedElt);
         } else {
+
+          if (helper.isExample(resolvedElt)) {
+
+            TreePath resolvedTP = docTrees.getPath(resolvedElt);
+            CompilationUnitTree unit = resolvedTP.getCompilationUnit();
+
+            StringBuilder source = new StringBuilder();
+            try(Reader reader = unit.getSourceFile().openReader(true)) {
+              char[] buffer = new char[256];
+              while (true) {
+                int len = reader.read(buffer);
+                if (len == -1) {
+                  break;
+                }
+                source.append(buffer, 0, len);
+              }
+            } catch (IOException e) {
+              throw new DocGenException(resolvedElt, "Could not read source code of element " + resolvedElt);
+            }
+
+            switch (resolvedElt.getKind()) {
+              case CONSTRUCTOR:
+              case METHOD:
+                MethodTree methodTree = (MethodTree) resolvedTP.getLeaf();
+                BlockTree blockTree = methodTree.getBody();
+                // Get block
+                List<? extends StatementTree> statements = blockTree.getStatements();
+                if (statements.size() > 0) {
+                  int from = (int) docTrees.getSourcePositions().getStartPosition(unit, statements.get(0));
+                  int to = (int) docTrees.getSourcePositions().getEndPosition(unit, statements.get(statements.size() - 1));
+                  String block = source.substring(from, to);
+                  // Determine margin
+                  int blockMargin = Integer.MAX_VALUE;
+                  LineMap lineMap = unit.getLineMap();
+                  for (StatementTree statement : statements) {
+                    int statementStart = (int) docTrees.getSourcePositions().getStartPosition(unit, statement);
+                    int lineStart = statementStart;
+                    while (lineMap.getLineNumber(statementStart) == lineMap.getLineNumber(lineStart - 1)) {
+                      lineStart--;
+                    }
+                    blockMargin = Math.min(blockMargin, statementStart - lineStart);
+                  }
+                  // Crop the fragment
+                  boolean first = true;
+                  for (Iterator<String> sc = new Scanner(block).useDelimiter("\n");sc.hasNext();) {
+                    String line = sc.next();
+                    if (first) {
+                      first = false;
+                    } else {
+                      int margin = Math.min(blockMargin, line.length());
+                      line = line.substring(margin);
+                    }
+                    writer.append(line);
+                    if (sc.hasNext()) {
+                      writer.append('\n');
+                    }
+                  }
+                }
+                return v;
+              default:
+                throw new UnsupportedOperationException("todo");
+            }
+          }
+
           String link;
           switch (resolvedElt.getKind()) {
             case CLASS:
