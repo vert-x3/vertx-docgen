@@ -121,7 +121,7 @@ public class ModuleTest {
   }
 
   @Test
-  public void testFoo() throws Exception {
+  public void testLinkToExampleMethod() throws Exception {
     assertEquals(
         "Map<String, String> map = new HashMap<>();\n" +
         "// Some comment\n" +
