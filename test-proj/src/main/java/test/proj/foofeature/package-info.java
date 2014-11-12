@@ -15,7 +15,8 @@
  * ----
  * {@link test.proj.foofeature.Examples#fooExample}
  * ----
- *
+ * <1> get a Foo
+ * <2> call {@link test.proj.foofeature.FooApi#myMethod api method}
  */
 package test.proj.foofeature;
 

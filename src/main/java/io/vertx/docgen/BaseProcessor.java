@@ -3,7 +3,10 @@ package io.vertx.docgen;
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.DocTreeVisitor;
+import com.sun.source.doctree.EndElementTree;
+import com.sun.source.doctree.ErroneousTree;
 import com.sun.source.doctree.LinkTree;
+import com.sun.source.doctree.StartElementTree;
 import com.sun.source.doctree.TextTree;
 import com.sun.source.tree.BlockTree;
 import com.sun.source.tree.CompilationUnitTree;
@@ -28,11 +31,6 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
-import javax.tools.JavaFileObject;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.Reader;
-import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Arrays;
@@ -137,10 +135,16 @@ public abstract class BaseProcessor extends AbstractProcessor {
     stack.addLast(pkgElt);
 
     DocWriter writer = new DocWriter(buffer);
-
-    TreePath tp = docTrees.getPath(pkgElt);
-    DocCommentTree doc = docTrees.getDocCommentTree(tp);
+    String pkgSource = helper.readSource(pkgElt);
+    TreePath pkgTree = docTrees.getPath(pkgElt);
+    DocCommentTree doc = docTrees.getDocCommentTree(pkgTree);
     DocTreeVisitor<Void, Void> visitor = new DocTreeScanner<Void, Void>() {
+
+      private void copyContent(DocTree node) {
+        int from = (int) docTrees.getSourcePositions().getStartPosition(pkgTree.getCompilationUnit(), doc, node);
+        int to = (int) docTrees.getSourcePositions().getEndPosition(pkgTree.getCompilationUnit(), doc, node);;
+        writer.append(pkgSource, from, to);
+      }
 
       @Override
       public Void visitDocComment(DocCommentTree node, Void v) {
@@ -155,10 +159,29 @@ public abstract class BaseProcessor extends AbstractProcessor {
       }
 
       @Override
+      public Void visitErroneous(ErroneousTree node, Void v) {
+        return visitText(node, v);
+      }
+
+      @Override
       public Void visitText(TextTree node, Void v) {
         String body = node.getBody();
         writer.append(body);
         return super.visitText(node, v);
+      }
+
+      @Override
+      public Void visitStartElement(StartElementTree node, Void v) {
+        copyContent(node);
+        return v;
+      }
+
+      @Override
+      public Void visitEndElement(EndElementTree node, Void v) {
+        writer.write("</");
+        writer.append(node.getName());
+        writer.append('>');
+        return v;
       }
 
       @Override
@@ -173,24 +196,9 @@ public abstract class BaseProcessor extends AbstractProcessor {
         } else {
 
           if (helper.isExample(resolvedElt)) {
-
             TreePath resolvedTP = docTrees.getPath(resolvedElt);
             CompilationUnitTree unit = resolvedTP.getCompilationUnit();
-
-            StringBuilder source = new StringBuilder();
-            try(Reader reader = unit.getSourceFile().openReader(true)) {
-              char[] buffer = new char[256];
-              while (true) {
-                int len = reader.read(buffer);
-                if (len == -1) {
-                  break;
-                }
-                source.append(buffer, 0, len);
-              }
-            } catch (IOException e) {
-              throw new DocGenException(resolvedElt, "Could not read source code of element " + resolvedElt);
-            }
-
+            String source = helper.readSource(resolvedElt);
             switch (resolvedElt.getKind()) {
               case CONSTRUCTOR:
               case METHOD:
@@ -201,6 +209,13 @@ public abstract class BaseProcessor extends AbstractProcessor {
                 if (statements.size() > 0) {
                   int from = (int) docTrees.getSourcePositions().getStartPosition(unit, statements.get(0));
                   int to = (int) docTrees.getSourcePositions().getEndPosition(unit, statements.get(statements.size() - 1));
+                  // Correct boundaries
+                  while (from > 1 && source.charAt(from - 1) != '\n') {
+                    from--;
+                  }
+                  while (to < source.length() && source.charAt(to) != '\n') {
+                    to++;
+                  }
                   String block = source.substring(from, to);
                   // Determine margin
                   int blockMargin = Integer.MAX_VALUE;
@@ -214,15 +229,10 @@ public abstract class BaseProcessor extends AbstractProcessor {
                     blockMargin = Math.min(blockMargin, statementStart - lineStart);
                   }
                   // Crop the fragment
-                  boolean first = true;
                   for (Iterator<String> sc = new Scanner(block).useDelimiter("\n");sc.hasNext();) {
                     String line = sc.next();
-                    if (first) {
-                      first = false;
-                    } else {
-                      int margin = Math.min(blockMargin, line.length());
-                      line = line.substring(margin);
-                    }
+                    int margin = Math.min(blockMargin, line.length());
+                    line = line.substring(margin);
                     writer.append(line);
                     if (sc.hasNext()) {
                       writer.append('\n');
@@ -275,7 +285,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
             if (t.length() == 0) {
               parametersMatcher = exeElt -> exeElt.getParameters().isEmpty();
             } else {
-              parametersMatcher = helper.parametersMatcher(tp.getCompilationUnit(), t.split("\\s*,\\s*"));
+              parametersMatcher = helper.parametersMatcher(pkgTree.getCompilationUnit(), t.split("\\s*,\\s*"));
             }
             memberMatcher = elt -> helper.matchesConstructor(elt, memberName, parametersMatcher) || helper.matchesMethod(elt, memberName, parametersMatcher);
           } else {

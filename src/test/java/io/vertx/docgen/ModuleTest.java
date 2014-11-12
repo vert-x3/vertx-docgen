@@ -127,7 +127,12 @@ public class ModuleTest {
         "// Some comment\n" +
         "\n" +
         "map.put(\"abc\", \"def\");\n" +
-        "map.get(\"abc\");", assertDoc("io.vertx.test.linktoexamplemethod"));
+        "map.get(\"abc\"); // Beyond last statement", assertDoc("io.vertx.test.linktoexamplemethod"));
+  }
+
+  @Test
+  public void testMarkup() throws Exception {
+    assertEquals("<abc>abc_content</abc>\n<def attr=\"value\">def_content</def>\n<ghi>", assertDoc("io.vertx.test.markup"));
   }
 
   private Map<String, String> failDoc(String pkg) throws Exception {

@@ -16,9 +16,10 @@ public class Examples {
   }
 
   public void fooExample() {
-    FooApi foo = getFoo();
+    FooApi foo = getFoo(); // <1>
     List<Boolean> list = new ArrayList<>();
     Set<Long> set = new HashSet<>();
-    foo.myMethod("whatever", 0, list, set);
+    foo.myMethod("whatever", 0, list, set); // <2>
   }
+
 }

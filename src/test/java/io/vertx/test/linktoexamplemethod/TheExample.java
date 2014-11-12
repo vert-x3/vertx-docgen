@@ -16,7 +16,7 @@ public class TheExample {
     // Some comment
 //
     map.put("abc", "def");
-    map.get("abc");
+    map.get("abc"); // Beyond last statement
   }
 
 }

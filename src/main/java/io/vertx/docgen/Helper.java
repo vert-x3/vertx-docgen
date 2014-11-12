@@ -4,6 +4,7 @@ import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.ImportTree;
 import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.Tree;
+import com.sun.source.util.DocTrees;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
@@ -17,6 +18,8 @@ import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
+import java.io.IOException;
+import java.io.Reader;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -27,10 +30,12 @@ class Helper {
 
   final Types typeUtils;
   final Elements elementUtils;
+  final DocTrees docTrees;
 
   public Helper(ProcessingEnvironment env) {
     typeUtils = env.getTypeUtils();
     elementUtils = env.getElementUtils();
+    docTrees = DocTrees.instance(env);
   }
 
   TypeMirror resolveSignatureType(CompilationUnitTree compilationUnit, String name) {
@@ -145,5 +150,29 @@ class Helper {
    */
   boolean isExample(Element elt) {
     return elt.getAnnotation(Example.class) != null || elt.getEnclosingElement() != null && isExample(elt.getEnclosingElement());
+  }
+
+  /**
+   * Read the source code of the provided element, this returns the source of the entire related compilation unit.
+   *
+   * @param elt the element to load
+   * @return the source
+   */
+  String readSource(Element elt) {
+    CompilationUnitTree unit = docTrees.getPath(elt).getCompilationUnit();
+    StringBuilder source = new StringBuilder();
+    try(Reader reader = unit.getSourceFile().openReader(true)) {
+      char[] buffer = new char[256];
+      while (true) {
+        int len = reader.read(buffer);
+        if (len == -1) {
+          break;
+        }
+        source.append(buffer, 0, len);
+      }
+      return source.toString();
+    } catch (IOException e) {
+      throw new DocGenException(elt, "Could not read source code of element " + elt);
+    }
   }
 }
