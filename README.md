@@ -7,11 +7,56 @@ package Javadoc and create a single Asciidoc file during the compilation phase.
 
 ## Features
 
-### Doc inclusion
+### Document modulalization
 
-The `{@link }` Javadoc tag includes the target doc when the target is a package.
+The `{@link }` Javadoc tag includes the target doc when the target is a package. This can be used to make your
+documentatin modular and split the various chapters of the document accross the API packages.
 
-### Program references
+### Source inclusion
+
+The `{@link }` Javadoc tag includes the referenced elements when this element is annotated with a `io.vertx.docgen.Example`
+annotation (otherwise it will just create a link). This can be used for examples:
+
+```
+@Example
+public class Examples {
+
+  public void myExample() {
+    MyApi api = getApi(); // <1>
+    List<Boolean> list = new ArrayList<>();
+    Set<Long> set = new HashSet<>();
+    api.myMethod("whatever", 0, list, set); // <2>
+  }
+
+}
+```
+
+It can be then included:
+
+```
+[source,java]
+----
+{@link mypackage.Examples#myExample}
+----
+<1> get a MyApi
+<2> call {@link mypackage.MyApi#myMethod api method}
+```
+
+Producing:
+
+```
+[source,java]
+----
+MyApi api = getApi(); // <1>
+List<Boolean> list = new ArrayList<>();
+Set<Long> set = new HashSet<>();
+api.myMethod("whatever", 0, list, set); // <2>
+----
+<1> get a MyApi
+<2> call link:apidocs/myproj/MyApi.html#myMethod-java.lang.String-int-java.util.List-java.util.Set-[`api method`]
+```
+
+### Referencing program elements
 
 The `{@link }` Javadoc tag creates a link to the Javadoc of a program element when the target is
  a type, a field or a method.
