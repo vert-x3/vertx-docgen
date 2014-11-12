@@ -15,46 +15,7 @@ documentatin modular and split the various chapters of the document accross the 
 ### Source inclusion
 
 The `{@link }` Javadoc tag includes the referenced elements when this element is annotated with a `io.vertx.docgen.Example`
-annotation (otherwise it will just create a link). This can be used for examples:
-
-```
-@Example
-public class Examples {
-
-  public void myExample() {
-    MyApi api = getApi(); // <1>
-    List<Boolean> list = new ArrayList<>();
-    Set<Long> set = new HashSet<>();
-    api.myMethod("whatever", 0, list, set); // <2>
-  }
-
-}
-```
-
-It can be then included:
-
-```
-[source,java]
-----
-{@link mypackage.Examples#myExample}
-----
-<1> get a MyApi
-<2> call {@link mypackage.MyApi#myMethod api method}
-```
-
-Producing:
-
-```
-[source,java]
-----
-MyApi api = getApi(); // <1>
-List<Boolean> list = new ArrayList<>();
-Set<Long> set = new HashSet<>();
-api.myMethod("whatever", 0, list, set); // <2>
-----
-<1> get a MyApi
-<2> call link:apidocs/myproj/MyApi.html#myMethod-java.lang.String-int-java.util.List-java.util.Set-[`api method`]
-```
+annotation (otherwise it will just create a link).
 
 ### Referencing program elements
 
@@ -89,6 +50,14 @@ package test.proj;
  * * item 2
  * * item 3
  *
+ * Some code:
+ *
+ * [source,java]
+ * ----
+ * {@link test.proj.foofeature.Examples#fooExample}
+ * ----
+ * <1> get a Foo
+ * <2> call {@link test.proj.foofeature.FooApi#myMethod api method}
  */
 package test.proj.foofeature;
 ```
@@ -107,4 +76,16 @@ The link:apidocs/test/proj/foofeature/FooApi.html#myField[`api field`]
 * item1
 * item 2
 * item 3
+
+Some code:
+
+[source,java]
+----
+FooApi foo = getFoo(); // <1>
+List<Boolean> list = new ArrayList<>();
+Set<Long> set = new HashSet<>();
+foo.myMethod("whatever", 0, list, set); // <2>
+----
+<1> get a Foo
+<2> call link:apidocs/test/proj/foofeature/FooApi.html#myMethod-java.lang.String-int-java.util.List-java.util.Set-[`api method`]
 ```
