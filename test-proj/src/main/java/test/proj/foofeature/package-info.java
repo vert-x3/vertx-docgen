@@ -17,6 +17,12 @@
  * ----
  * <1> get a Foo
  * <2> call {@link test.proj.foofeature.FooApi#myMethod api method}
+ *
+ * === A sub section
+ *
+ * {@link test.proj.foofeature.subsection}
  */
+@Document
 package test.proj.foofeature;
 
+import io.vertx.docgen.Document;

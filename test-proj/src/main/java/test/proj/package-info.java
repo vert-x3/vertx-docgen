@@ -1,7 +1,7 @@
 /**
  * = The great project
  *
- * {@link test.proj.foofeature}
+ * include::{@link test.proj.foofeature}[]
  *
  */
 @Document

@@ -111,6 +111,8 @@ public abstract class BaseProcessor extends AbstractProcessor {
 
   protected abstract void handleGen(PackageElement moduleElt, String content);
 
+  protected abstract String resolveLinkgPackageDoc(PackageElement elt);
+
   protected abstract String resolveLinkTypeDoc(TypeElement elt);
 
   protected abstract String resolveLinkConstructorDoc(ExecutableElement elt);
@@ -190,9 +192,13 @@ public abstract class BaseProcessor extends AbstractProcessor {
           throw new DocGenException(pkgElt, "Could not resolve " + signature);
         } else if (resolvedElt instanceof PackageElement) {
           PackageElement includedElt = (PackageElement) resolvedElt;
-          process(writer, includedElt);
+          if (includedElt.getAnnotation(Document.class) == null) {
+            process(writer, includedElt);
+          } else {
+            String link = resolveLinkgPackageDoc((PackageElement) resolvedElt);
+            writer.append(link);
+          }
         } else {
-
           if (helper.isExample(resolvedElt)) {
             TreePath resolvedTP = docTrees.getPath(resolvedElt);
             CompilationUnitTree unit = resolvedTP.getCompilationUnit();
@@ -242,7 +248,6 @@ public abstract class BaseProcessor extends AbstractProcessor {
                 throw new UnsupportedOperationException("todo");
             }
           }
-
           String link;
           switch (resolvedElt.getKind()) {
             case CLASS:

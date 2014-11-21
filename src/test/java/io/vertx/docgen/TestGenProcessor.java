@@ -20,6 +20,11 @@ public class TestGenProcessor extends BaseProcessor {
   Map<String, String> results = new HashMap<>();
 
   @Override
+  protected String resolveLinkgPackageDoc(PackageElement elt) {
+    return "package[" + elt.getQualifiedName() + "]";
+  }
+
+  @Override
   protected String resolveLinkTypeDoc(TypeElement elt) {
     return "type";
   }

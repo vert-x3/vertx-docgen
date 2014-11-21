@@ -131,6 +131,11 @@ public class ModuleTest {
   }
 
   @Test
+  public void testLinkToPackage() throws Exception {
+    assertEquals("package[io.vertx.test.linktopackage.sub]", assertDoc("io.vertx.test.linktopackage"));
+  }
+
+  @Test
   public void testMarkup() throws Exception {
     assertEquals("<abc>abc_content</abc>\n<def attr=\"value\">def_content</def>\n<ghi>", assertDoc("io.vertx.test.markup"));
   }

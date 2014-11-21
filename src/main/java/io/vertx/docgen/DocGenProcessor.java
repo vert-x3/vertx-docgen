@@ -42,6 +42,11 @@ public class DocGenProcessor extends BaseProcessor {
     }
   }
 
+  @Override
+  protected String resolveLinkgPackageDoc(PackageElement elt) {
+    return elt.toString() + ".adoc";
+  }
+
   protected String resolveLinkTypeDoc(TypeElement elt) {
     return "apidocs/" + elt.getQualifiedName().toString().replace('.', '/') + ".html";
   }
