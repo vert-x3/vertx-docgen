@@ -3,7 +3,7 @@
  *
  * the_body
  */
-@GenModule(name = "margin")
+@Document()
 package io.vertx.test.commentstructure;
 
-import io.vertx.codegen.annotations.GenModule;
+import io.vertx.docgen.Document;

@@ -3,7 +3,7 @@
  * B
  * C
  */
-@GenModule(name = "margin")
+@Document
 package io.vertx.test.margin;
 
-import io.vertx.codegen.annotations.GenModule;
+import io.vertx.docgen.Document;

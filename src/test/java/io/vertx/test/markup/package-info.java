@@ -3,7 +3,7 @@
  * <def attr="value">def_content</def>
  * <ghi>
  */
-@GenModule(name = "markup")
+@Document
 package io.vertx.test.markup;
 
-import io.vertx.codegen.annotations.GenModule;
+import io.vertx.docgen.Document;

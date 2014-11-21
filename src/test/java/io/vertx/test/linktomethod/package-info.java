@@ -22,7 +22,7 @@
  *{@link io.vertx.test.linktomethod.TheClass#m16(java.lang.String[][])}
  *{@link io.vertx.test.linktomethod.TheClass#m17(java.lang.Object[])}
  */
-@GenModule(name = "linktomethod")
+@Document
 package io.vertx.test.linktomethod;
 
-import io.vertx.codegen.annotations.GenModule;
+import io.vertx.docgen.Document;

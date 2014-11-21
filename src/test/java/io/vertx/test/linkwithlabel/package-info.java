@@ -1,7 +1,7 @@
 /**
  *{@link io.vertx.test.linkwithlabel.TheClass#m() the label value}
  */
-@GenModule(name = "linkwithlabel")
+@Document
 package io.vertx.test.linkwithlabel;
 
-import io.vertx.codegen.annotations.GenModule;
+import io.vertx.docgen.Document;

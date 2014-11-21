@@ -3,8 +3,9 @@
  *{@link io.vertx.test.linktomethodwithsimpletypename.TheClass#m2(String)}
  *{@link io.vertx.test.linktomethodwithsimpletypename.TheClass#m3(Locale[])}
  */
-@GenModule(name = "linktomethod")
+@Document
 package io.vertx.test.linktomethodwithsimpletypename;
 
-import io.vertx.codegen.annotations.GenModule;
+import io.vertx.docgen.Document;
+
 import java.util.Locale;

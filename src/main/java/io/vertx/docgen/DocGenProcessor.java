@@ -16,7 +16,7 @@ import java.util.List;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @SupportedAnnotationTypes({
-    "io.vertx.codegen.annotations.GenModule"
+    "io.vertx.docgen.Document"
 })
 @javax.annotation.processing.SupportedSourceVersion(javax.lang.model.SourceVersion.RELEASE_8)
 public class DocGenProcessor extends BaseProcessor {

@@ -1,7 +1,7 @@
 /**
  * {@link io.vertx.test.linktomethodmember.TheClass#m}
  */
-@GenModule(name = "linktomethodmember")
+@Document
 package io.vertx.test.linktomethodmember;
 
-import io.vertx.codegen.annotations.GenModule;
+import io.vertx.docgen.Document;

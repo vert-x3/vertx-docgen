@@ -4,7 +4,7 @@
  * {@link test.proj.foofeature}
  *
  */
-@GenModule(name = "testproj")
+@Document
 package test.proj;
 
-import io.vertx.codegen.annotations.GenModule;
+import io.vertx.docgen.Document;

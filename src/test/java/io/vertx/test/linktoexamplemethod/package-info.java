@@ -1,7 +1,7 @@
 /**
  *{@link io.vertx.test.linktoexamplemethod.TheExample#someMethod()}
  */
-@GenModule(name = "linktoexamplemethod")
+@Document
 package io.vertx.test.linktoexamplemethod;
 
-import io.vertx.codegen.annotations.GenModule;
+import io.vertx.docgen.Document;

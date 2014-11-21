@@ -16,8 +16,6 @@ import com.sun.source.tree.StatementTree;
 import com.sun.source.util.DocTreeScanner;
 import com.sun.source.util.DocTrees;
 import com.sun.source.util.TreePath;
-import io.vertx.codegen.GenException;
-import io.vertx.codegen.annotations.GenModule;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;
@@ -82,7 +80,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
   @Override
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
     if (failures.isEmpty()) {
-      roundEnv.getElementsAnnotatedWith(GenModule.class).forEach(elt -> {
+      roundEnv.getElementsAnnotatedWith(Document.class).forEach(elt -> {
         StringWriter buffer = new StringWriter();
         PackageElement pkgElt = (PackageElement) elt;
         try {
@@ -129,7 +127,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
 
     for (PackageElement stackElt : stack) {
       if (pkgElt.getQualifiedName().equals(stackElt.getQualifiedName())) {
-        throw new GenException(stack.peekLast(), "Circular include");
+        throw new DocException(stack.peekLast(), "Circular include");
       }
     }
     stack.addLast(pkgElt);

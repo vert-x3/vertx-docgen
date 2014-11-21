@@ -1,7 +1,7 @@
 /**
  * before_include{@link io.vertx.test.includepkg.sub}after_include
  */
-@GenModule(name = "includepkg")
+@Document
 package io.vertx.test.includepkg;
 
-import io.vertx.codegen.annotations.GenModule;
+import io.vertx.docgen.Document;

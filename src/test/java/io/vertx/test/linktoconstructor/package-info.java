@@ -2,7 +2,7 @@
  *{@link io.vertx.test.linktoconstructor.TheClass#TheClass}
  *{@link io.vertx.test.linktoconstructor.TheClass#TheClass()}
  */
-@GenModule(name = "linktoconstructor")
+@Document
 package io.vertx.test.linktoconstructor;
 
-import io.vertx.codegen.annotations.GenModule;
+import io.vertx.docgen.Document;

@@ -1,7 +1,7 @@
 /**
  * {@link non_existing}
  */
-@GenModule(name = "includenonexisting")
+@Document
 package io.vertx.test.includenonexisting;
 
-import io.vertx.codegen.annotations.GenModule;
+import io.vertx.docgen.Document;

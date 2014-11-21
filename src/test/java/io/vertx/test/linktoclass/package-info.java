@@ -1,7 +1,7 @@
 /**
  * {@link io.vertx.test.linktoclass.TheClass}
  */
-@GenModule(name = "linktoclass")
+@Document
 package io.vertx.test.linktoclass;
 
-import io.vertx.codegen.annotations.GenModule;
+import io.vertx.docgen.Document;

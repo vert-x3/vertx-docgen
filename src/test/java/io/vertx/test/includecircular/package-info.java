@@ -1,7 +1,7 @@
 /**
  * {@link io.vertx.test.includecircular.sub1}
  */
-@GenModule(name = "includecircular")
+@Document
 package io.vertx.test.includecircular;
 
-import io.vertx.codegen.annotations.GenModule;
+import io.vertx.docgen.Document;
