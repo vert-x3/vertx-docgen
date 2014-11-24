@@ -76,7 +76,7 @@
             <source>1.8</source>
             <target>1.8</target>
             <annotationProcessors>
-              <annotationProcessor>io.vertx.docgen.DocGenProcessor</annotationProcessor>
+              <annotationProcessor>io.vertx.docgen.JavaDocGenProcessor</annotationProcessor>
             </annotationProcessors>
           </configuration>
           <executions>

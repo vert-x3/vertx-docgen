@@ -5,6 +5,7 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
+import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,28 +26,31 @@ public class TestGenProcessor extends BaseProcessor {
   }
 
   @Override
-  protected String resolveLinkTypeDoc(TypeElement elt) {
+  protected String toTypeLink(TypeElement elt) {
     return "type";
   }
 
   @Override
-  protected String resolveLinkConstructorDoc(ExecutableElement elt) {
+  protected String toConstructorLink(ExecutableElement elt) {
     return "constructor";
   }
 
   @Override
-  protected String resolveLinkMethodDoc(ExecutableElement elt) {
+  protected String toMethodLink(ExecutableElement elt) {
     return "method";
   }
 
   @Override
-  protected String resolveLinkFieldDoc(VariableElement elt) {
+  protected String toFieldLink(VariableElement elt) {
     return "field";
   }
 
   @Override
-  protected void handleGen(PackageElement moduleElt, String content) {
-    results.put(moduleElt.getQualifiedName().toString(), content);
+  protected void handleGen(PackageElement docElt) {
+    StringWriter buffer = new StringWriter();
+    process(buffer, docElt);
+    String content = buffer.toString();
+    results.put(docElt.getQualifiedName().toString(), content);
   }
 
   public String getDoc(String name) {

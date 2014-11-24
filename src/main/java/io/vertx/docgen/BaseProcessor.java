@@ -29,7 +29,9 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
-import java.io.StringWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.io.Writer;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -81,10 +83,9 @@ public abstract class BaseProcessor extends AbstractProcessor {
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
     if (failures.isEmpty()) {
       roundEnv.getElementsAnnotatedWith(Document.class).forEach(elt -> {
-        StringWriter buffer = new StringWriter();
         PackageElement pkgElt = (PackageElement) elt;
         try {
-          process(buffer, pkgElt);
+          handleGen(pkgElt);
         } catch (Exception e) {
           Element reportedElt = (e instanceof DocGenException) ? ((DocGenException) e).getElement() : elt;
           String msg = e.getMessage();
@@ -99,29 +100,28 @@ public abstract class BaseProcessor extends AbstractProcessor {
             throw new UnsupportedOperationException("not implemented");
           }
         }
-        handleGen(pkgElt, buffer.toString());
       });
     }
     return false;
   }
 
-  protected abstract void handleGen(PackageElement moduleElt, String content);
+  protected abstract void handleGen(PackageElement pkgElt);
 
   protected abstract String resolveLinkgPackageDoc(PackageElement elt);
 
-  protected abstract String resolveLinkTypeDoc(TypeElement elt);
+  protected abstract String toTypeLink(TypeElement elt);
 
-  protected abstract String resolveLinkConstructorDoc(ExecutableElement elt);
+  protected abstract String toConstructorLink(ExecutableElement elt);
 
-  protected abstract String resolveLinkMethodDoc(ExecutableElement elt);
+  protected abstract String toMethodLink(ExecutableElement elt);
 
-  protected abstract String resolveLinkFieldDoc(VariableElement elt);
+  protected abstract String toFieldLink(VariableElement elt);
 
   private static final Pattern P = Pattern.compile("#(\\p{javaJavaIdentifierStart}(?:\\p{javaJavaIdentifierPart})*)(?:\\((.*)\\))?$");
 
   private final LinkedList<PackageElement> stack = new LinkedList<>();
 
-  private void process(Writer buffer, PackageElement pkgElt) {
+  protected final void process(Writer buffer, PackageElement pkgElt) {
 
     for (PackageElement stackElt : stack) {
       if (pkgElt.getQualifiedName().equals(stackElt.getQualifiedName())) {
@@ -250,16 +250,16 @@ public abstract class BaseProcessor extends AbstractProcessor {
           switch (resolvedElt.getKind()) {
             case CLASS:
             case INTERFACE:
-              link = resolveLinkTypeDoc((TypeElement) resolvedElt);
+              link = toTypeLink((TypeElement) resolvedElt);
               break;
             case METHOD:
-              link = resolveLinkMethodDoc((ExecutableElement) resolvedElt);
+              link = toMethodLink((ExecutableElement) resolvedElt);
               break;
             case CONSTRUCTOR:
-              link = resolveLinkConstructorDoc((ExecutableElement) resolvedElt);
+              link = toConstructorLink((ExecutableElement) resolvedElt);
               break;
             case FIELD:
-              link = resolveLinkFieldDoc((VariableElement) resolvedElt);
+              link = toFieldLink((VariableElement) resolvedElt);
               break;
             default:
               throw new UnsupportedOperationException("Not yet implemented " + resolvedElt + " with kind " + resolvedElt.getKind());
@@ -314,5 +314,36 @@ public abstract class BaseProcessor extends AbstractProcessor {
     };
     doc.accept(visitor, null);
     stack.removeLast();
+  }
+
+  protected void write(PackageElement docElt, String content) {
+    String outputOpt = processingEnv.getOptions().get("docgen.output");
+    if (outputOpt != null) {
+      File outputDir = new File(outputOpt);
+      if (outputDir.exists()) {
+        if (outputDir.isDirectory()) {
+          write(outputDir, docElt, content);
+        } else {
+          System.out.println("could not use non dir " + outputDir.getAbsolutePath());
+        }
+      } else {
+        if (outputDir.mkdirs()) {
+          write(outputDir, docElt, content);
+        } else {
+          System.out.println("could not create dir " + outputDir.getAbsolutePath());
+        }
+      }
+    }
+  }
+
+  private void write(File dir, PackageElement docElt, String content) {
+    try {
+      File file = new File(dir, docElt.getQualifiedName().toString() + ".adoc");
+      try (FileWriter writer = new FileWriter(file)) {
+        writer.write(content);
+      }
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
   }
 }

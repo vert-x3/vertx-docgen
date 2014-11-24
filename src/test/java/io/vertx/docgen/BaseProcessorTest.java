@@ -2,6 +2,7 @@ package io.vertx.docgen;
 
 import org.junit.Test;
 
+import javax.annotation.processing.Processor;
 import java.io.File;
 import java.lang.*;
 import java.net.URL;
@@ -16,7 +17,7 @@ import static org.junit.Assert.*;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class ModuleTest {
+public class BaseProcessorTest {
 
   @Test
   public void testIncludePkg() throws Exception {
@@ -147,18 +148,18 @@ public class ModuleTest {
   }
 
   private Map<String, String> failDoc(String pkg) throws Exception {
-    Compiler compiler = buildCompiler(pkg);
+    Compiler<TestGenProcessor> compiler = buildCompiler(new TestGenProcessor(), pkg);
     compiler.failCompile();
     return compiler.processor.failures;
   }
 
   private String assertDoc(String pkg) throws Exception {
-    Compiler compiler = buildCompiler(pkg);
+    Compiler<TestGenProcessor> compiler = buildCompiler(new TestGenProcessor(), pkg);
     compiler.assertCompile();
     return compiler.processor.getDoc(pkg);
   }
 
-  private Compiler buildCompiler(String pkg) throws Exception {
+  static <P extends Processor> Compiler<P> buildCompiler(P processor, String pkg) throws Exception {
     int index = 0;
     File output;
     do {
@@ -167,7 +168,7 @@ public class ModuleTest {
     }
     while (output.exists());
     ArrayList<File> sources = new ArrayList<>();
-    for (URL url : Collections.list(ModuleTest.class.getClassLoader().getResources(pkg.replace('.', '/')))) {
+    for (URL url : Collections.list(BaseProcessorTest.class.getClassLoader().getResources(pkg.replace('.', '/')))) {
       File root = new File(url.toURI());
       Files.
           find(root.toPath(), 100, (path, attrs) -> path.toString().endsWith(".java")).
@@ -175,6 +176,6 @@ public class ModuleTest {
           forEach(sources::add);
     }
     assertTrue(sources.size() > 0);
-    return new Compiler(sources, output);
+    return new Compiler<>(processor, sources, output);
   }
 }

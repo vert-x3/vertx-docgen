@@ -1,5 +1,6 @@
 package io.vertx.docgen;
 
+import javax.annotation.processing.Processor;
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticCollector;
 import javax.tools.DiagnosticListener;
@@ -22,21 +23,21 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Compiler {
+public class Compiler<P extends Processor> {
 
   final File dest;
   final Collection<File> sources;
-  final TestGenProcessor processor;
+  final P processor;
   final StandardJavaFileManager fileManager;
   final DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
   final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
 
-  public Compiler(Collection<File> sources, File dest) {
+  public Compiler(P processor, Collection<File> sources, File dest) {
     JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
     this.fileManager = compiler.getStandardFileManager(diagnostics, Locale.ENGLISH, Charset.forName("UTF-8"));
     this.dest = dest;
     this.sources = sources;
-    this.processor = new TestGenProcessor();
+    this.processor = processor;
   }
 
   void failCompile() {
