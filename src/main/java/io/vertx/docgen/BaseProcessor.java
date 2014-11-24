@@ -99,11 +99,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
             throw new UnsupportedOperationException("not implemented");
           }
         }
-
-        // Normalize the buffer
-        String a = buffer.toString().replace("\n ", "\n");
-
-        handleGen(pkgElt, a);
+        handleGen(pkgElt, buffer.toString());
       });
     }
     return false;
@@ -233,6 +229,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
                     blockMargin = Math.min(blockMargin, statementStart - lineStart);
                   }
                   // Crop the fragment
+                  writer.literalMode();
                   for (Iterator<String> sc = new Scanner(block).useDelimiter("\n");sc.hasNext();) {
                     String line = sc.next();
                     int margin = Math.min(blockMargin, line.length());
@@ -242,6 +239,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
                       writer.append('\n');
                     }
                   }
+                  writer.commentMode();
                 }
                 return v;
               default:

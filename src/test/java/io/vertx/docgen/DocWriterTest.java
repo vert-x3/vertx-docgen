@@ -14,12 +14,12 @@ public class DocWriterTest {
 
   @Test
   public void testFormat() throws IOException {
-    assertText("abc", "abc");
-    assertText(" abc", " abc");
-    assertText("abc\ndef", "abc\ndef");
-    assertText("abc\n def", "abc\ndef");
-    assertText("abc\n  def", "abc\n def");
-    assertText("abc\n def\n ghi", "abc\ndef\nghi");
+    assertCommentText("abc", "abc");
+    assertCommentText(" abc", " abc");
+    assertCommentText("abc\ndef", "abc\ndef");
+    assertCommentText("abc\n def", "abc\ndef");
+    assertCommentText("abc\n  def", "abc\n def");
+    assertCommentText("abc\n def\n ghi", "abc\ndef\nghi");
   }
 
   @Test
@@ -33,9 +33,27 @@ public class DocWriterTest {
     assertEquals("abc\ndef\nghi\njkl", buffer.toString());
   }
 
-  private void assertText(String actual, String expected) throws IOException {
+  @Test
+  public void testLiteralMode() throws IOException {
+    assertLiteralText("abc", "abc");
+    assertLiteralText(" abc", " abc");
+    assertLiteralText("abc\ndef", "abc\ndef");
+    assertLiteralText("abc\n def", "abc\n def");
+    assertLiteralText("abc\n  def", "abc\n  def");
+    assertLiteralText("abc\n def\n ghi", "abc\n def\n ghi");
+  }
+
+  private void assertCommentText(String actual, String expected) throws IOException {
     StringWriter buffer = new StringWriter();
     DocWriter writer = new DocWriter(buffer);
+    writer.write(actual);
+    assertEquals(expected, buffer.toString());
+  }
+
+  private void assertLiteralText(String actual, String expected) throws IOException {
+    StringWriter buffer = new StringWriter();
+    DocWriter writer = new DocWriter(buffer);
+    writer.literalMode();
     writer.write(actual);
     assertEquals(expected, buffer.toString());
   }

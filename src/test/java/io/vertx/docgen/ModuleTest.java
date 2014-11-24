@@ -126,6 +126,12 @@ public class ModuleTest {
         "Map<String, String> map = new HashMap<>();\n" +
         "// Some comment\n" +
         "\n" +
+        "if (true) {\n" +
+        "  // Indented 1\n" +
+        "  if (false) {\n" +
+        "    // Indented 2\n" +
+        "  }\n" +
+        "}\n" +
         "map.put(\"abc\", \"def\");\n" +
         "map.get(\"abc\"); // Beyond last statement", assertDoc("io.vertx.test.linktoexamplemethod"));
   }

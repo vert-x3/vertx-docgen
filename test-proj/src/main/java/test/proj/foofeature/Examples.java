@@ -18,6 +18,9 @@ public class Examples {
   public void fooExample() {
     FooApi foo = getFoo(); // <1>
     List<Boolean> list = new ArrayList<>();
+    Runnable lambda = () -> {
+      System.out.println("hello from lambda");
+    };
     Set<Long> set = new HashSet<>();
     foo.myMethod("whatever", 0, list, set); // <2>
   }

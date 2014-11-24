@@ -15,6 +15,12 @@ public class TheExample {
     Map<String, String> map = new HashMap<>();
     // Some comment
 //
+    if (true) {
+      // Indented 1
+      if (false) {
+        // Indented 2
+      }
+    }
     map.put("abc", "def");
     map.get("abc"); // Beyond last statement
   }
