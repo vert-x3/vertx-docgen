@@ -98,12 +98,17 @@ public class DocGenProcessor extends BaseProcessor {
   }
 
   private String eval(String functionName, Object... args) {
+    Thread currentThread = Thread.currentThread();
+    ClassLoader prev = currentThread.getContextClassLoader();
     try {
       ScriptObjectMirror function = (ScriptObjectMirror) current.eval(functionName);
+      currentThread.setContextClassLoader(DocGenProcessor.class.getClassLoader());
       return (String) function.call(this, args);
     } catch (ScriptException e) {
       e.printStackTrace();
       throw new RuntimeException(e);
+    } finally {
+      currentThread.setContextClassLoader(prev);
     }
   }
 }
