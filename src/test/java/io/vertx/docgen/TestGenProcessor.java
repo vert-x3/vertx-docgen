@@ -16,7 +16,7 @@ import java.util.Map;
     "io.vertx.docgen.Document"
 })
 @javax.annotation.processing.SupportedSourceVersion(javax.lang.model.SourceVersion.RELEASE_8)
-public class TestGenProcessor extends BaseProcessor {
+public class TestGenProcessor extends JavaDocGenProcessor {
 
   Map<String, String> results = new HashMap<>();
 

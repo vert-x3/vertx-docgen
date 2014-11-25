@@ -73,6 +73,11 @@ public class DocGenProcessor extends BaseProcessor {
     return elt.toString() + ".adoc";
   }
 
+  @Override
+  protected String renderSource(ExecutableElement elt, String source) {
+    return eval("renderSource", elt, source);
+  }
+
   protected String toTypeLink(TypeElement elt) {
     return eval("toTypeLink", elt);
   }
@@ -91,10 +96,10 @@ public class DocGenProcessor extends BaseProcessor {
     return eval("toFieldLink", elt);
   }
 
-  private String eval(String functionName, Object o) {
+  private String eval(String functionName, Object... args) {
     try {
       ScriptObjectMirror function = (ScriptObjectMirror) current.eval(functionName);
-      return (String) function.call(this, o);
+      return (String) function.call(this, args);
     } catch (ScriptException e) {
       e.printStackTrace();
       throw new RuntimeException(e);

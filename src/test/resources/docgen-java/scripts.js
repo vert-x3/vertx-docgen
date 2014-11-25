@@ -1,3 +1,7 @@
+function renderSource(elt, source) {
+  return "todo";
+}
+
 function toTypeLink(elt) {
   return "apidocs/" + elt.getQualifiedName().toString().replace(".", "/") + ".html";
 }
