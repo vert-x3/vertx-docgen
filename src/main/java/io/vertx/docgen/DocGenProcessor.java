@@ -42,6 +42,7 @@ public class DocGenProcessor extends BaseProcessor {
       for (URL url : abc) {
         try (InputStream in = url.openStream()) {
           ScriptEngine engine = manager.getEngineByName("nashorn");
+          engine.put("processingEnv", processingEnv);
           engine.put("typeUtils", processingEnv.getTypeUtils());
           engine.put("elementUtils", processingEnv.getElementUtils());
           ObjectMapper parser = new ObjectMapper();
