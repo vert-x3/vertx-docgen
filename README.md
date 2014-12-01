@@ -5,11 +5,22 @@
 Create an Asciidoc document from package Javadoc. It comes as an annotation processor that process the various
 package Javadoc and create a single Asciidoc file during the compilation phase.
 
+## Motivation
+
+- The documentation can reference the underlying API doc (Javadoc, Scaladoc, JSdoc, etc…) : when the Asciidoc
+content is created the `{@link}` are transformed to a link to the API doc
+- The documentation always point to an existing API, i.e the {@link} references validity are checked
+and make the compilation fails
+- Refactoring friendly, when you rename a method the corresponding {@link} are updated, allowing you
+easily spot the affected doc (using git diff or something)
+
 ## Features
 
 ### Document declaration
 
-`@Document` annotations are processed, each annotated package creates a corresponding asciidoc document.
+`@Document` annotations are processed, each annotated package creates a corresponding asciidoc document. The
+annotation can specify an optional `fileName` member otherwise the document file name will be generated using the
+annotated element.
 
 ### Document modulalization
 
@@ -42,7 +53,7 @@ Given the  files:
  * include::{@link test.proj.foofeature}[]
  *
  */
-@io.vertx.docgen.Document
+@io.vertx.docgen.Document(fileName = "index.adoc")
 package test.proj;
 ```
 

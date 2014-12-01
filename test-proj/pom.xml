@@ -57,7 +57,7 @@
             </goals>
             <configuration>
               <sourceDirectory>${project.build.directory}/asciidoc</sourceDirectory>
-              <sourceDocumentName>test.proj.adoc</sourceDocumentName>
+              <sourceDocumentName>index.adoc</sourceDocumentName>
               <outputDirectory>${project.build.directory}/site</outputDirectory>
               <backend>html</backend>
               <doctype>book</doctype>

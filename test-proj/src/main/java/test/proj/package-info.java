@@ -4,7 +4,7 @@
  * include::{@link test.proj.foofeature}[]
  *
  */
-@Document
+@Document(fileName = "index.adoc")
 package test.proj;
 
 import io.vertx.docgen.Document;
