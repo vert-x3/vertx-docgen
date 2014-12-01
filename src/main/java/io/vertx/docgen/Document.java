@@ -13,4 +13,11 @@ import java.lang.annotation.Target;
 @Target(ElementType.PACKAGE)
 @Retention(RetentionPolicy.CLASS)
 public @interface Document {
+
+  /**
+   * @return the file name of this document, when no name is specified, the name will be generated
+   *         using the annotated package element.
+   */
+  String fileName() default "";
+
 }

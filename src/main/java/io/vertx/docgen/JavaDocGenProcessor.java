@@ -36,11 +36,6 @@ public class JavaDocGenProcessor extends BaseProcessor {
   }
 
   @Override
-  protected String resolveLinkgPackageDoc(PackageElement elt) {
-    return elt.toString() + ".adoc";
-  }
-
-  @Override
   protected String toTypeLink(TypeElement elt) {
     return "apidocs/" + elt.getQualifiedName().toString().replace('.', '/') + ".html";
   }

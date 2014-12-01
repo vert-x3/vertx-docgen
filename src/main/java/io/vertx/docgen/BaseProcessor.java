@@ -8,11 +8,6 @@ import com.sun.source.doctree.ErroneousTree;
 import com.sun.source.doctree.LinkTree;
 import com.sun.source.doctree.StartElementTree;
 import com.sun.source.doctree.TextTree;
-import com.sun.source.tree.BlockTree;
-import com.sun.source.tree.CompilationUnitTree;
-import com.sun.source.tree.LineMap;
-import com.sun.source.tree.MethodTree;
-import com.sun.source.tree.StatementTree;
 import com.sun.source.util.DocTreeScanner;
 import com.sun.source.util.DocTrees;
 import com.sun.source.util.TreePath;
@@ -35,11 +30,9 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
@@ -107,7 +100,15 @@ public abstract class BaseProcessor extends AbstractProcessor {
 
   protected abstract void handleGen(PackageElement pkgElt);
 
-  protected abstract String resolveLinkgPackageDoc(PackageElement elt);
+  protected String resolveLinkToPackageDoc(PackageElement elt) {
+    Document annotation = elt.getAnnotation(Document.class);
+    String fileName = annotation.fileName();
+    if (fileName.isEmpty()) {
+      return elt.toString() + ".adoc";
+    } else {
+      return fileName;
+    }
+  }
 
   protected abstract String toTypeLink(TypeElement elt);
 
@@ -193,7 +194,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
           if (includedElt.getAnnotation(Document.class) == null) {
             process(writer, includedElt);
           } else {
-            String link = resolveLinkgPackageDoc((PackageElement) resolvedElt);
+            String link = resolveLinkToPackageDoc((PackageElement) resolvedElt);
             writer.append(link);
           }
         } else {
@@ -286,31 +287,35 @@ public abstract class BaseProcessor extends AbstractProcessor {
   protected void write(PackageElement docElt, String content) {
     String outputOpt = processingEnv.getOptions().get("docgen.output");
     if (outputOpt != null) {
-      File outputDir = new File(outputOpt);
-      if (outputDir.exists()) {
-        if (outputDir.isDirectory()) {
-          write(outputDir, docElt, content);
-        } else {
-          System.out.println("could not use non dir " + outputDir.getAbsolutePath());
+      try {
+        Document doc = docElt.getAnnotation(Document.class);
+        String relativeName = doc.fileName();
+        if (relativeName.isEmpty()) {
+          relativeName = docElt.getQualifiedName() + ".adoc";
         }
-      } else {
-        if (outputDir.mkdirs()) {
-          write(outputDir, docElt, content);
-        } else {
-          System.out.println("could not create dir " + outputDir.getAbsolutePath());
+        File dir = new File(outputOpt);
+        for (int i = relativeName.indexOf('/');i != -1;i = relativeName.indexOf('/', i + 1)) {
+          dir = new File(dir, relativeName.substring(0, i));
+          relativeName = relativeName.substring(i + 1);
         }
+        ensureDir(docElt, dir);
+        File file = new File(dir, relativeName);
+        try (FileWriter writer = new FileWriter(file)) {
+          writer.write(content);
+        }
+      } catch (IOException e) {
+        e.printStackTrace();
       }
     }
   }
 
-  private void write(File dir, PackageElement docElt, String content) {
-    try {
-      File file = new File(dir, docElt.getQualifiedName().toString() + ".adoc");
-      try (FileWriter writer = new FileWriter(file)) {
-        writer.write(content);
+  private void ensureDir(PackageElement elt, File dir) {
+    if (dir.exists()) {
+      if (!dir.isDirectory()) {
+        throw new DocGenException(elt, "File " + dir.getAbsolutePath() + " is not a dir");
       }
-    } catch (IOException e) {
-      e.printStackTrace();
+    } else if (!dir.mkdirs()) {
+      throw new DocGenException(elt, "could not create dir " + dir.getAbsolutePath());
     }
   }
 }

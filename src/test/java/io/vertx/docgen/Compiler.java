@@ -16,7 +16,10 @@ import java.io.StringWriter;
 import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertTrue;
 
@@ -31,6 +34,7 @@ public class Compiler<P extends Processor> {
   final StandardJavaFileManager fileManager;
   final DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
   final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+  final Map<String, String> options = new HashMap<>();
 
   public Compiler(P processor, Collection<File> sources, File dest) {
     JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
@@ -38,6 +42,14 @@ public class Compiler<P extends Processor> {
     this.dest = dest;
     this.sources = sources;
     this.processor = processor;
+  }
+
+  void setOption(String name, String value) {
+    if (value == null) {
+      options.remove(name);
+    } else {
+      options.put(name, value);
+    }
   }
 
   void failCompile() {
@@ -70,7 +82,9 @@ public class Compiler<P extends Processor> {
       throw new AssertionError("Could not set location", e);
     }
     Iterable<? extends JavaFileObject> files = fileManager.getJavaFileObjects(sources.toArray(new File[sources.size()]));
-    JavaCompiler.CompilationTask task = compiler.getTask(new OutputStreamWriter(System.out), fileManager, diagnostics, Collections.<String>emptyList(), Collections.<String>emptyList(), files);
+    JavaCompiler.CompilationTask task = compiler.getTask(new OutputStreamWriter(System.out), fileManager, diagnostics,
+        options.entrySet().stream().map(entry -> "-A" + entry.getKey() + "=" + entry.getValue()).collect(Collectors.toList()),
+        Collections.<String>emptyList(), files);
     task.setLocale(Locale.ENGLISH);
     task.setProcessors(Collections.singleton(processor));
     return task;

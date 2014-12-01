@@ -21,7 +21,7 @@ public class TestGenProcessor extends JavaDocGenProcessor {
   Map<String, String> results = new HashMap<>();
 
   @Override
-  protected String resolveLinkgPackageDoc(PackageElement elt) {
+  protected String resolveLinkToPackageDoc(PackageElement elt) {
     return "package[" + elt.getQualifiedName() + "]";
   }
 

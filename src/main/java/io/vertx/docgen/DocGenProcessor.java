@@ -70,11 +70,6 @@ public class DocGenProcessor extends BaseProcessor {
   }
 
   @Override
-  protected String resolveLinkgPackageDoc(PackageElement elt) {
-    return elt.toString() + ".adoc";
-  }
-
-  @Override
   protected String renderSource(ExecutableElement elt, String source) {
     return eval("renderSource", elt, source);
   }
