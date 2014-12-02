@@ -33,7 +33,8 @@ will be literaly included in the document.
 ### Source inclusion
 
 The `{@link }` Javadoc tag includes the referenced elements when this element is annotated with a `io.vertx.docgen.Source`
-annotation (otherwise it will just create a link).
+annotation (otherwise it will just create a link). The `@Source` annotation can annotate a single method, a class
+or a package.
 
 ### Referencing program elements
 

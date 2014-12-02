@@ -1,4 +1,4 @@
-package io.vertx.test.linktoexamplemethod;
+package io.vertx.test.includemethodfromannotatedclass;
 
 import io.vertx.docgen.Source;
 

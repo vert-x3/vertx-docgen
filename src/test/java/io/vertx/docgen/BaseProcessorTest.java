@@ -122,7 +122,7 @@ public class BaseProcessorTest {
   }
 
   @Test
-  public void testLinkToExampleMethod() throws Exception {
+  public void testIncludeMethodFromAnnotatedClass() throws Exception {
     assertEquals(
         "Map<String, String> map = new HashMap<>();\n" +
         "// Some comment\n" +
@@ -134,7 +134,19 @@ public class BaseProcessorTest {
         "  }\n" +
         "}\n" +
         "map.put(\"abc\", \"def\");\n" +
-        "map.get(\"abc\"); // Beyond last statement", assertDoc("io.vertx.test.linktoexamplemethod"));
+        "map.get(\"abc\"); // Beyond last statement", assertDoc("io.vertx.test.includemethodfromannotatedclass"));
+  }
+
+  @Test
+  public void testIncludeMethodFromAnnotatedMethod() throws Exception {
+    assertEquals(
+        "int a = 0;", assertDoc("io.vertx.test.includemethodfromannotatedmethod"));
+  }
+
+  @Test
+  public void testIncludeMethodFromAnnotatedPackage() throws Exception {
+    assertEquals(
+        "int a = 0;", assertDoc("io.vertx.test.includemethodfromannotatedpkg"));
   }
 
   @Test

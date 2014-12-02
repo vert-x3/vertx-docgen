@@ -12,7 +12,7 @@ import java.lang.annotation.Target;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-@Target(ElementType.TYPE)
+@Target({ElementType.TYPE,ElementType.PACKAGE,ElementType.METHOD})
 @Retention(RetentionPolicy.CLASS)
 public @interface Source {
 }
