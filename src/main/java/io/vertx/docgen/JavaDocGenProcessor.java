@@ -7,7 +7,6 @@ import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.StatementTree;
 import com.sun.source.util.TreePath;
 
-import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
@@ -24,8 +23,6 @@ import java.util.Scanner;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-@SupportedAnnotationTypes({"io.vertx.docgen.Document"})
-@javax.annotation.processing.SupportedSourceVersion(javax.lang.model.SourceVersion.RELEASE_8)
 public class JavaDocGenProcessor extends BaseProcessor {
 
   @Override

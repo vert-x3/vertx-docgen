@@ -15,6 +15,7 @@ import com.sun.source.util.TreePath;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
+import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
@@ -29,6 +30,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -48,6 +50,21 @@ public abstract class BaseProcessor extends AbstractProcessor {
   protected Elements elementUtils;
   protected Helper helper;
   Map<String, String> failures = new HashMap<>();
+
+  @Override
+  public SourceVersion getSupportedSourceVersion() {
+    return SourceVersion.RELEASE_8;
+  }
+
+  @Override
+  public Set<String> getSupportedOptions() {
+    return Collections.singleton("docgen.output");
+  }
+
+  @Override
+  public Set<String> getSupportedAnnotationTypes() {
+    return Collections.singleton(Document.class.getName());
+  }
 
   @Override
   public synchronized void init(ProcessingEnvironment processingEnv) {

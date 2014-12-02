@@ -1,6 +1,5 @@
 package io.vertx.docgen;
 
-import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
@@ -12,10 +11,6 @@ import java.util.Map;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-@SupportedAnnotationTypes({
-    "io.vertx.docgen.Document"
-})
-@javax.annotation.processing.SupportedSourceVersion(javax.lang.model.SourceVersion.RELEASE_8)
 public class TestGenProcessor extends JavaDocGenProcessor {
 
   Map<String, String> results = new HashMap<>();
