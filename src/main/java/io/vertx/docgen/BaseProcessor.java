@@ -32,6 +32,7 @@ import java.io.Writer;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -58,7 +59,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
 
   @Override
   public Set<String> getSupportedOptions() {
-    return Collections.singleton("docgen.output");
+    return new HashSet<>(Arrays.asList("docgen.output", "docgen.extension"));
   }
 
   @Override
@@ -117,11 +118,19 @@ public abstract class BaseProcessor extends AbstractProcessor {
 
   protected abstract void handleGen(PackageElement pkgElt);
 
+  protected String getExtension() {
+    String extension = processingEnv.getOptions().get("docgen.extension");
+    if (extension != null) {
+      return extension;
+    }
+    return ".ad";
+  }
+
   protected String resolveLinkToPackageDoc(PackageElement elt) {
     Document annotation = elt.getAnnotation(Document.class);
     String fileName = annotation.fileName();
     if (fileName.isEmpty()) {
-      return elt.toString() + ".adoc";
+      return elt.toString() + getExtension();
     } else {
       return fileName;
     }
@@ -308,7 +317,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
         Document doc = docElt.getAnnotation(Document.class);
         String relativeName = doc.fileName();
         if (relativeName.isEmpty()) {
-          relativeName = docElt.getQualifiedName() + ".adoc";
+          relativeName = docElt.getQualifiedName() + getExtension();
         }
         File dir = new File(outputOpt);
         for (int i = relativeName.indexOf('/');i != -1;i = relativeName.indexOf('/', i + 1)) {

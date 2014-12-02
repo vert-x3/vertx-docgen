@@ -22,7 +22,7 @@ public class DocGenProcessorTest {
       dir.deleteOnExit();
       compiler.setOption("docgen.output", dir.getAbsolutePath());
       compiler.assertCompile();
-      File file = new File(dir, pkg + ".adoc");
+      File file = new File(dir, pkg + ".ad");
       assertTrue(file.exists());
       assertTrue(file.isFile());
     }
@@ -35,12 +35,28 @@ public class DocGenProcessorTest {
     dir.deleteOnExit();
     compiler.setOption("docgen.output", dir.getAbsolutePath());
     compiler.assertCompile();
-    File f1 = new File(dir, "index.adoc");
+    File f1 = new File(dir, "index.ad");
     assertTrue(f1.exists());
     assertTrue(f1.isFile());
-    File f2 = new File(dir, "sub" + File.separator + "index.adoc");
+    File f2 = new File(dir, "sub" + File.separator + "index.ad");
     assertTrue(f2.exists());
     assertTrue(f2.isFile());
-    assertEquals("sub/index.adoc", new String(Files.readAllBytes(f1.toPath())));
+    assertEquals("sub/index.ad", new String(Files.readAllBytes(f1.toPath())));
+  }
+
+  @Test
+  public void testExtension() throws Exception {
+    for (String pkg : Arrays.asList("io.vertx.test.linktoclass",
+        "io.vertx.test.linktoconstructor", "io.vertx.test.linktomethod", "io.vertx.test.linktofield")) {
+      Compiler<DocGenProcessor> compiler = BaseProcessorTest.buildCompiler(new DocGenProcessor(), pkg);
+      File dir = Files.createTempDirectory("docgen").toFile();
+      dir.deleteOnExit();
+      compiler.setOption("docgen.output", dir.getAbsolutePath());
+      compiler.setOption("docgen.extension", ".ad.txt");
+      compiler.assertCompile();
+      File file = new File(dir, pkg + ".ad.txt");
+      assertTrue(file.exists());
+      assertTrue(file.isFile());
+    }
   }
 }
