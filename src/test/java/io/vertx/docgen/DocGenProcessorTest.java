@@ -67,10 +67,13 @@ public class DocGenProcessorTest {
       Compiler<DocGenProcessor> compiler = BaseProcessorTest.buildCompiler(new DocGenProcessor(), pkg);
       File dir = Files.createTempDirectory("docgen").toFile();
       dir.deleteOnExit();
-      compiler.setOption("docgen.output", new File(dir, "${name}").getAbsolutePath());
+      String outputOption = new File(dir, "${name}").getAbsolutePath();
+      System.out.println("Output option is " + outputOption);
+      compiler.setOption("docgen.output", outputOption);
       compiler.setOption("docgen.extension", ".ad.txt");
       compiler.assertCompile();
       File file = new File(new File(dir, "java"), pkg + ".ad.txt");
+      System.out.println("Checking file " + file);
       assertTrue(file.exists());
       assertTrue(file.isFile());
     }
