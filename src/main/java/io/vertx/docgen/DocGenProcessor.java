@@ -27,28 +27,29 @@ import java.util.List;
  */
 public class DocGenProcessor extends BaseProcessor {
 
-  private List<ScriptEngine> engines = new ArrayList<>();
-  private ScriptEngine current;
+  private List<Generator> generators = new ArrayList<>();
+  private Generator current;
 
   @Override
   public synchronized void init(ProcessingEnvironment processingEnv) {
     super.init(processingEnv);
     ScriptEngineManager manager = new ScriptEngineManager();
     try {
-      List<URL> abc = Collections.list(DocGenProcessor.class.getClassLoader().getResources("docgen.json"));
-      for (URL url : abc) {
-        try (InputStream in = url.openStream()) {
+      List<URL> docgenUrls = Collections.list(DocGenProcessor.class.getClassLoader().getResources("docgen.json"));
+      for (URL docgenUrl : docgenUrls) {
+        try (InputStream docgenIn = docgenUrl.openStream()) {
           ScriptEngine engine = manager.getEngineByName("nashorn");
           engine.put("processingEnv", processingEnv);
           engine.put("typeUtils", processingEnv.getTypeUtils());
           engine.put("elementUtils", processingEnv.getElementUtils());
           ObjectMapper parser = new ObjectMapper();
-          JsonNode obj = parser.readTree(in);
+          JsonNode obj = parser.readTree(docgenIn);
+          String name = obj.get("name").asText();
           String scripts = obj.get("scripts").asText();
-          try (InputStream in2 = DocGenProcessor.class.getClassLoader().getResourceAsStream(scripts)) {
-            engine.eval(new InputStreamReader(in2));
+          try (InputStream scriptsIn = DocGenProcessor.class.getClassLoader().getResourceAsStream(scripts)) {
+            engine.eval(new InputStreamReader(scriptsIn));
           }
-          engines.add(engine);
+          generators.add(new Generator(name, engine));
         }
       }
     } catch (Exception e) {
@@ -57,9 +58,14 @@ public class DocGenProcessor extends BaseProcessor {
   }
 
   @Override
+  protected String getName() {
+    return current.name;
+  }
+
+  @Override
   protected void handleGen(PackageElement docElt) {
-    for (ScriptEngine engine : engines) {
-      current = engine;
+    for (Generator generator : generators) {
+      current = generator;
       StringWriter buffer = new StringWriter();
       process(buffer, docElt);
       write(docElt, buffer.toString());
@@ -68,39 +74,52 @@ public class DocGenProcessor extends BaseProcessor {
 
   @Override
   protected String renderSource(ExecutableElement elt, String source) {
-    return eval("renderSource", elt, source);
+    return current.eval("renderSource", elt, source);
   }
 
+  @Override
   protected String toTypeLink(TypeElement elt) {
-    return eval("toTypeLink", elt);
+    return current.eval("toTypeLink", elt);
   }
 
   @Override
   protected String toConstructorLink(ExecutableElement elt) {
-    return eval("toConstructorLink", elt);
+    return current.eval("toConstructorLink", elt);
   }
 
+  @Override
   protected String toMethodLink(ExecutableElement elt) {
-    return eval("toMethodLink", elt);
+    return current.eval("toMethodLink", elt);
   }
 
   @Override
   protected String toFieldLink(VariableElement elt) {
-    return eval("toFieldLink", elt);
+    return current.eval("toFieldLink", elt);
   }
 
-  private String eval(String functionName, Object... args) {
-    Thread currentThread = Thread.currentThread();
-    ClassLoader prev = currentThread.getContextClassLoader();
-    try {
-      ScriptObjectMirror function = (ScriptObjectMirror) current.eval(functionName);
-      currentThread.setContextClassLoader(DocGenProcessor.class.getClassLoader());
-      return (String) function.call(this, args);
-    } catch (ScriptException e) {
-      e.printStackTrace();
-      throw new RuntimeException(e);
-    } finally {
-      currentThread.setContextClassLoader(prev);
+  static class Generator {
+
+    final String name;
+    final ScriptEngine engine;
+
+    public Generator(String name, ScriptEngine engine) {
+      this.name = name;
+      this.engine = engine;
+    }
+
+    private String eval(String functionName, Object... args) {
+      Thread currentThread = Thread.currentThread();
+      ClassLoader prev = currentThread.getContextClassLoader();
+      try {
+        ScriptObjectMirror function = (ScriptObjectMirror) engine.eval(functionName);
+        currentThread.setContextClassLoader(DocGenProcessor.class.getClassLoader());
+        return (String) function.call(this, args);
+      } catch (ScriptException e) {
+        e.printStackTrace();
+        throw new RuntimeException(e);
+      } finally {
+        currentThread.setContextClassLoader(prev);
+      }
     }
   }
 }

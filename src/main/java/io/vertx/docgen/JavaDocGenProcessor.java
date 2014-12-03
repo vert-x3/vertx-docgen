@@ -33,6 +33,11 @@ public class JavaDocGenProcessor extends BaseProcessor {
   }
 
   @Override
+  protected String getName() {
+    return "java";
+  }
+
+  @Override
   protected String toTypeLink(TypeElement elt) {
     return "apidocs/" + elt.getQualifiedName().toString().replace('.', '/') + ".html";
   }

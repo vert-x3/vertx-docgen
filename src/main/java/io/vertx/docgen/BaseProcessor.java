@@ -146,6 +146,11 @@ public abstract class BaseProcessor extends AbstractProcessor {
 
   protected abstract String renderSource(ExecutableElement elt, String source);
 
+  /**
+   * @return the current generator name
+   */
+  protected abstract String getName();
+
   private static final Pattern P = Pattern.compile("#(\\p{javaJavaIdentifierStart}(?:\\p{javaJavaIdentifierPart})*)(?:\\((.*)\\))?$");
 
   private final LinkedList<PackageElement> stack = new LinkedList<>();
@@ -313,6 +318,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
   protected void write(PackageElement docElt, String content) {
     String outputOpt = processingEnv.getOptions().get("docgen.output");
     if (outputOpt != null) {
+      outputOpt = outputOpt.replace("${name}", getName());
       try {
         Document doc = docElt.getAnnotation(Document.class);
         String relativeName = doc.fileName();

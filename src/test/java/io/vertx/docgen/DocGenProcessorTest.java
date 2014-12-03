@@ -59,4 +59,20 @@ public class DocGenProcessorTest {
       assertTrue(file.isFile());
     }
   }
+
+  @Test
+  public void testOutputInterpolation() throws Exception {
+    for (String pkg : Arrays.asList("io.vertx.test.linktoclass",
+        "io.vertx.test.linktoconstructor", "io.vertx.test.linktomethod", "io.vertx.test.linktofield")) {
+      Compiler<DocGenProcessor> compiler = BaseProcessorTest.buildCompiler(new DocGenProcessor(), pkg);
+      File dir = Files.createTempDirectory("docgen").toFile();
+      dir.deleteOnExit();
+      compiler.setOption("docgen.output", dir.getAbsolutePath() + "/${name}");
+      compiler.setOption("docgen.extension", ".ad.txt");
+      compiler.assertCompile();
+      File file = new File(dir, "java/" + pkg + ".ad.txt");
+      assertTrue(file.exists());
+      assertTrue(file.isFile());
+    }
+  }
 }
