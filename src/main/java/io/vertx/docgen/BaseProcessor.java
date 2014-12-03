@@ -318,9 +318,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
   protected void write(PackageElement docElt, String content) {
     String outputOpt = processingEnv.getOptions().get("docgen.output");
     if (outputOpt != null) {
-      System.out.println("Output option is " + outputOpt);
       outputOpt = outputOpt.replace("${name}", getName());
-      System.out.println("Interpolated output option is " + outputOpt);
       try {
         Document doc = docElt.getAnnotation(Document.class);
         String relativeName = doc.fileName();
