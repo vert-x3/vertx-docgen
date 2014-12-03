@@ -70,7 +70,7 @@ public class DocGenProcessorTest {
       compiler.setOption("docgen.output", dir.getAbsolutePath() + "/${name}");
       compiler.setOption("docgen.extension", ".ad.txt");
       compiler.assertCompile();
-      File file = new File(dir, "java" + File.separator + pkg + ".ad.txt");
+      File file = new File(new File(dir, "java"), pkg + ".ad.txt");
       assertTrue(file.exists());
       assertTrue(file.isFile());
     }
