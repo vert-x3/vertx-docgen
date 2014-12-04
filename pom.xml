@@ -11,8 +11,8 @@
 
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>docgen</artifactId>
-  <version>1.0-SNAPSHOT</version>
+  <artifactId>vertx-docgen</artifactId>
+  <version>3.0.0-SNAPSHOT</version>
 
   <properties>
     <tools.jar>${java.home}/../lib/tools.jar</tools.jar>
