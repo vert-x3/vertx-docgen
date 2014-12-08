@@ -24,8 +24,8 @@
     </dependency>
     <dependency>
       <groupId>io.vertx</groupId>
-      <artifactId>docgen</artifactId>
-      <version>1.0-SNAPSHOT</version>
+      <artifactId>vertx-docgen</artifactId>
+      <version>3.0.0-SNAPSHOT</version>
     </dependency>
   </dependencies>
 
@@ -57,7 +57,7 @@
             </goals>
             <configuration>
               <sourceDirectory>${project.build.directory}/asciidoc</sourceDirectory>
-              <sourceDocumentName>index.ad</sourceDocumentName>
+              <sourceDocumentName>index.adoc</sourceDocumentName>
               <outputDirectory>${project.build.directory}/site</outputDirectory>
               <backend>html</backend>
               <doctype>book</doctype>

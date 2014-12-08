@@ -46,7 +46,7 @@ The `{@link }` Javadoc tag creates a link to the Javadoc of a program element wh
 The annotation processor can be configured via annotation processing options:
 
 - `docgen.output` : path of the file output dir
-- `docgen.extension` : the file extension to use when file names are generated, defaults to `.ad`
+- `docgen.extension` : the file extension to use when file names are generated, defaults to `.adoc`
 
 ## Example
 
@@ -61,7 +61,7 @@ Given the  files:
  * include::{@link test.proj.foofeature}[]
  *
  */
-@io.vertx.docgen.Document(fileName = "index.ad")
+@io.vertx.docgen.Document(fileName = "index.adoc")
 package test.proj;
 ```
 
@@ -106,9 +106,9 @@ Generate the following Asciidoc files:
 ```
 = The great project
 
-include::test.proj.foofeature.ad[]
+include::test.proj.foofeature.adoc[]
 ```
-_test.proj.ad_
+_test.proj.adoc_
 
 ```
 == The foo feature.
@@ -137,4 +137,4 @@ foo.myMethod("whatever", 0, list, set); // <2>
 
 A literaly included section
 ```
-_test.proj.foofeature.ad_
+_test.proj.foofeature.adoc_

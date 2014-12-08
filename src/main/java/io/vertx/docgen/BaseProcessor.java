@@ -118,12 +118,16 @@ public abstract class BaseProcessor extends AbstractProcessor {
 
   protected abstract void handleGen(PackageElement pkgElt);
 
+  /**
+   * @return the extension obtained from processor option {@literal docgen.extension} defaults to {@literal .adoc}
+   *         when absent.
+   */
   protected String getExtension() {
     String extension = processingEnv.getOptions().get("docgen.extension");
     if (extension != null) {
       return extension;
     }
-    return ".ad";
+    return ".adoc";
   }
 
   protected String resolveLinkToPackageDoc(PackageElement elt) {

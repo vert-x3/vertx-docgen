@@ -22,7 +22,7 @@ public class DocGenProcessorTest {
       dir.deleteOnExit();
       compiler.setOption("docgen.output", dir.getAbsolutePath());
       compiler.assertCompile();
-      File file = new File(dir, pkg + ".ad");
+      File file = new File(dir, pkg + ".adoc");
       assertTrue(file.exists());
       assertTrue(file.isFile());
     }
@@ -35,13 +35,13 @@ public class DocGenProcessorTest {
     dir.deleteOnExit();
     compiler.setOption("docgen.output", dir.getAbsolutePath());
     compiler.assertCompile();
-    File f1 = new File(dir, "index.ad");
+    File f1 = new File(dir, "index.adoc");
     assertTrue(f1.exists());
     assertTrue(f1.isFile());
-    File f2 = new File(dir, "sub" + File.separator + "index.ad");
+    File f2 = new File(dir, "sub" + File.separator + "index.adoc");
     assertTrue(f2.exists());
     assertTrue(f2.isFile());
-    assertEquals("sub/index.ad", new String(Files.readAllBytes(f1.toPath())));
+    assertEquals("sub/index.adoc", new String(Files.readAllBytes(f1.toPath())));
   }
 
   @Test
