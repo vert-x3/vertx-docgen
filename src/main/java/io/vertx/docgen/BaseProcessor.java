@@ -19,6 +19,7 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Modifier;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
@@ -270,6 +271,10 @@ public abstract class BaseProcessor extends AbstractProcessor {
           String label = render(node.getLabel()).trim();
           if (label.length() == 0) {
             label = resolvedElt.getSimpleName().toString();
+            if (resolvedElt.getModifiers().contains(Modifier.STATIC) &&
+                (resolvedElt.getKind() == ElementKind.METHOD || resolvedElt.getKind() == ElementKind.FIELD)) {
+              label = resolvedElt.getEnclosingElement().getSimpleName() + "." + label;
+            }
           }
           writer.append("link:").append(link).append("[`").append(label).append("`]");
         }

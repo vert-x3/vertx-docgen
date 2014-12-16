@@ -45,6 +45,11 @@ public class BaseProcessorTest {
   }
 
   @Test
+  public void testLinkToStaticField() throws Exception {
+    assertEquals("link:field[`TheClass.f1`]", assertDoc("io.vertx.test.linktostaticfield"));
+  }
+
+  @Test
   public void testLinkToMethodMember() throws Exception {
     assertEquals("link:method[`m`]", assertDoc("io.vertx.test.linktomethodmember"));
   }
@@ -75,6 +80,12 @@ public class BaseProcessorTest {
         "link:method[`m16`]\n" +
         "link:method[`m17`]" +
         "", assertDoc("io.vertx.test.linktomethod"));
+  }
+
+  @Test
+  public void testLinkToStaticMethod() throws Exception {
+    assertEquals(
+        "link:method[`TheClass.m`]", assertDoc("io.vertx.test.linktostaticmethod"));
   }
 
   @Test
