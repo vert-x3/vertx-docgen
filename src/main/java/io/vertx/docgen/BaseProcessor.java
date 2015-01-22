@@ -38,9 +38,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Predicate;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -156,8 +153,6 @@ public abstract class BaseProcessor extends AbstractProcessor {
    */
   protected abstract String getName();
 
-  private static final Pattern P = Pattern.compile("#(\\p{javaJavaIdentifierStart}(?:\\p{javaJavaIdentifierPart})*)(?:\\((.*)\\))?$");
-
   private final LinkedList<PackageElement> stack = new LinkedList<>();
 
   protected final void process(Writer buffer, PackageElement pkgElt) {
@@ -222,7 +217,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
       @Override
       public Void visitLink(LinkTree node, Void v) {
         String signature = node.getReference().getSignature();
-        Element resolvedElt = resolveLink(signature);
+        Element resolvedElt = helper.resolveLink(signature);
         if (resolvedElt == null) {
           throw new DocGenException(pkgElt, "Could not resolve " + signature);
         } else if (resolvedElt instanceof PackageElement) {
@@ -279,45 +274,6 @@ public abstract class BaseProcessor extends AbstractProcessor {
           writer.append("link:").append(link).append("[`").append(label).append("`]");
         }
         return v;
-      }
-
-      private Element resolveLink(String signature) {
-        Matcher signatureMatcher = P.matcher(signature);
-        if (signatureMatcher.find()) {
-          String memberName = signatureMatcher.group(1);
-          String typeName = signature.substring(0, signatureMatcher.start());
-          TypeElement typeElt = elementUtils.getTypeElement(typeName);
-          Predicate<? super Element> memberMatcher;
-          if (signatureMatcher.group(2) != null) {
-            String t = signatureMatcher.group(2).trim();
-            Predicate<ExecutableElement> parametersMatcher;
-            if (t.length() == 0) {
-              parametersMatcher = exeElt -> exeElt.getParameters().isEmpty();
-            } else {
-              parametersMatcher = helper.parametersMatcher(pkgTree.getCompilationUnit(), t.split("\\s*,\\s*"));
-            }
-            memberMatcher = elt -> helper.matchesConstructor(elt, memberName, parametersMatcher) || helper.matchesMethod(elt, memberName, parametersMatcher);
-          } else {
-            memberMatcher = elt -> helper.matchesConstructor(elt, memberName, exeElt -> true) ||
-                helper.matchesMethod(elt, memberName, exeElt -> true) ||
-                helper.matchesField(elt, memberName);
-          }
-          // The order of kinds is important
-          for (ElementKind kind : Arrays.asList(ElementKind.FIELD, ElementKind.CONSTRUCTOR, ElementKind.METHOD)) {
-            for (Element memberElt : elementUtils.getAllMembers(typeElt)) {
-              if(memberElt.getKind() == kind && memberMatcher.test(memberElt)) {
-                return memberElt;
-              }
-            }
-          }
-          return null;
-        } else {
-          Element elt = elementUtils.getTypeElement(signature);
-          if (elt == null) {
-            elt = elementUtils.getPackageElement(signature);
-          }
-          return elt;
-        }
       }
     };
     doc.accept(visitor, null);

@@ -1,9 +1,6 @@
 package io.vertx.docgen;
 
 import com.sun.source.tree.CompilationUnitTree;
-import com.sun.source.tree.ImportTree;
-import com.sun.source.tree.MemberSelectTree;
-import com.sun.source.tree.Tree;
 import com.sun.source.util.DocTrees;
 
 import javax.annotation.processing.ProcessingEnvironment;
@@ -12,14 +9,15 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.ExecutableType;
-import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import java.io.IOException;
 import java.io.Reader;
+import java.util.Arrays;
 import java.util.function.Predicate;
-import java.util.stream.Stream;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -34,60 +32,6 @@ class Helper {
     typeUtils = env.getTypeUtils();
     elementUtils = env.getElementUtils();
     docTrees = DocTrees.instance(env);
-  }
-
-  TypeMirror resolveSignatureType(CompilationUnitTree compilationUnit, String name) {
-    if (name.equals("boolean")) {
-      return typeUtils.getPrimitiveType(TypeKind.BOOLEAN);
-    } else if (name.equals("byte")) {
-      return typeUtils.getPrimitiveType(TypeKind.BYTE);
-    } else if (name.equals("short")) {
-      return typeUtils.getPrimitiveType(TypeKind.SHORT);
-    } else if (name.equals("int")) {
-      return typeUtils.getPrimitiveType(TypeKind.INT);
-    } else if (name.equals("long")) {
-      return typeUtils.getPrimitiveType(TypeKind.LONG);
-    } else if (name.equals("float")) {
-      return typeUtils.getPrimitiveType(TypeKind.FLOAT);
-    } else if (name.equals("double")) {
-      return typeUtils.getPrimitiveType(TypeKind.DOUBLE);
-    } else if (name.equals("char")) {
-      return typeUtils.getPrimitiveType(TypeKind.CHAR);
-    } else if (name.endsWith("[]")) {
-      TypeMirror componentType = resolveSignatureType(compilationUnit, name.substring(0, name.length() - 2));
-      if (componentType != null) {
-        return typeUtils.getArrayType(componentType);
-      }
-    } else {
-      TypeElement typeElt;
-      int index = name.indexOf('.');
-      if (index >= 0) {
-        typeElt = elementUtils.getTypeElement(name);
-      } else {
-        typeElt = null;
-        for (ImportTree importTree : compilationUnit.getImports()) {
-          Tree identifier = importTree.getQualifiedIdentifier();
-          if (identifier instanceof MemberSelectTree) {
-            MemberSelectTree memberSelect = (MemberSelectTree) identifier;
-            if (name.equals(memberSelect.getIdentifier().toString())) {
-              typeElt = elementUtils.getTypeElement(memberSelect.getExpression() + "." + memberSelect.getIdentifier());
-              if (typeElt != null) {
-                break;
-              }
-            }
-          } else {
-            throw new UnsupportedOperationException("not implemented");
-          }
-        }
-        if (typeElt == null) {
-          typeElt = elementUtils.getTypeElement("java.lang." + name);
-        }
-      }
-      if (typeElt != null) {
-        return typeUtils.erasure(typeElt.asType());
-      }
-    }
-    return null;
   }
 
   boolean matchesConstructor(Element elt, String memberName, Predicate<ExecutableElement> parametersMatcher) {
@@ -111,25 +55,67 @@ class Helper {
     return elt.getKind() == ElementKind.FIELD && elt.getSimpleName().toString().equals(memberName);
   }
 
+  private static final Pattern P = Pattern.compile("#(\\p{javaJavaIdentifierStart}(?:\\p{javaJavaIdentifierPart})*)(?:\\((.*)\\))?$");
+
+  public Element resolveLink(String signature) {
+    Matcher signatureMatcher = P.matcher(signature);
+    if (signatureMatcher.find()) {
+      String memberName = signatureMatcher.group(1);
+      String typeName = signature.substring(0, signatureMatcher.start());
+      TypeElement typeElt = elementUtils.getTypeElement(typeName);
+      Predicate<? super Element> memberMatcher;
+      if (signatureMatcher.group(2) != null) {
+        String t = signatureMatcher.group(2).trim();
+        Predicate<ExecutableElement> parametersMatcher;
+        if (t.length() == 0) {
+          parametersMatcher = exeElt -> exeElt.getParameters().isEmpty();
+        } else {
+          parametersMatcher = parametersMatcher(t.split("\\s*,\\s*"));
+        }
+        memberMatcher = elt -> matchesConstructor(elt, memberName, parametersMatcher) || matchesMethod(elt, memberName, parametersMatcher);
+      } else {
+        memberMatcher = elt -> matchesConstructor(elt, memberName, exeElt -> true) ||
+            matchesMethod(elt, memberName, exeElt -> true) ||
+            matchesField(elt, memberName);
+      }
+      // The order of kinds is important
+      for (ElementKind kind : Arrays.asList(ElementKind.FIELD, ElementKind.CONSTRUCTOR, ElementKind.METHOD)) {
+        for (Element memberElt : elementUtils.getAllMembers(typeElt)) {
+          if(memberElt.getKind() == kind && memberMatcher.test(memberElt)) {
+            return memberElt;
+          }
+        }
+      }
+      return null;
+    } else {
+      Element elt = elementUtils.getTypeElement(signature);
+      if (elt == null) {
+        elt = elementUtils.getPackageElement(signature);
+      }
+      return elt;
+    }
+  }
+
   /**
    * Return a matcher for parameters, given the parameter type signature of an executable element. The parameter signature
    * is a list of parameter types formatted as a signature, i.e all types are raw, or primitive, or arrays. Unqualified
    * types are resolved against the import of the specified {@code compilationUnitTree} argument.
    *
-   * @param compilationUnitTree the compilation unit
    * @param parameterSignature the parameter type names
    * @return the matcher
    */
-  Predicate<ExecutableElement> parametersMatcher(CompilationUnitTree compilationUnitTree, String[] parameterSignature) {
-    TypeMirror[] types = Stream.of(parameterSignature).map(name -> resolveSignatureType(compilationUnitTree, name)).toArray(TypeMirror[]::new);
+  Predicate<ExecutableElement> parametersMatcher(String[] parameterSignature) {
     return exeElt -> {
-      if (exeElt.getParameters().size() == types.length) {
+      if (exeElt.getParameters().size() == parameterSignature.length) {
         TypeMirror tm2  = exeElt.asType();
         ExecutableType tm3  = (ExecutableType) typeUtils.erasure(tm2);
-        for (int j = 0;j < types.length;j++) {
-          TypeMirror t1 = tm3.getParameterTypes().get(j);
-          TypeMirror t2 = types[j];
-          if (t2 == null || !typeUtils.isSameType(t2, t1)) {
+        for (int j = 0;j < parameterSignature.length;j++) {
+          String t1 = tm3.getParameterTypes().get(j).toString();
+          String t2 = parameterSignature[j];
+          if (t2.indexOf('.') == -1) {
+            t1 = t1.substring(t1.lastIndexOf('.') + 1);
+          }
+          if (!t1.equals(t2)) {
             return false;
           }
         }

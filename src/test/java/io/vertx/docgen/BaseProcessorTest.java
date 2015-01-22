@@ -93,7 +93,8 @@ public class BaseProcessorTest {
     assertEquals(
         "link:method[`m1`]\n" +
         "link:method[`m2`]\n" +
-        "link:method[`m3`]" +
+        "link:method[`m3`]\n" +
+        "link:method[`m4`]" +
         "", assertDoc("io.vertx.test.linktomethodwithsimpletypename"));
   }
 
