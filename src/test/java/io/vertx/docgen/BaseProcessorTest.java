@@ -50,6 +50,11 @@ public class BaseProcessorTest {
   }
 
   @Test
+  public void testLinkToEnumConstant() throws Exception {
+    assertEquals("link:enumConstant[`THE_CONSTANT`]", assertDoc("io.vertx.test.linktoenumconstant"));
+  }
+
+  @Test
   public void testLinkToStaticField() throws Exception {
     assertEquals("link:field[`TheClass.f1`]", assertDoc("io.vertx.test.linktostaticfield"));
   }

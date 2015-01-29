@@ -259,6 +259,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
               link = toConstructorLink((ExecutableElement) resolvedElt);
               break;
             case FIELD:
+            case ENUM_CONSTANT:
               link = toFieldLink((VariableElement) resolvedElt);
               break;
             default:

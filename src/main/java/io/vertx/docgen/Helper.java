@@ -51,8 +51,9 @@ class Helper {
     return false;
   }
 
-  boolean matchesField(Element elt, String memberName) {
-    return elt.getKind() == ElementKind.FIELD && elt.getSimpleName().toString().equals(memberName);
+  boolean matchesFieldOrEnumConstant(Element elt, String memberName) {
+    ElementKind kind = elt.getKind();
+    return (kind == ElementKind.FIELD || kind == ElementKind.ENUM_CONSTANT) && elt.getSimpleName().toString().equals(memberName);
   }
 
   private static final Pattern P = Pattern.compile("#(\\p{javaJavaIdentifierStart}(?:\\p{javaJavaIdentifierPart})*)(?:\\((.*)\\))?$");
@@ -76,10 +77,10 @@ class Helper {
       } else {
         memberMatcher = elt -> matchesConstructor(elt, memberName, exeElt -> true) ||
             matchesMethod(elt, memberName, exeElt -> true) ||
-            matchesField(elt, memberName);
+            matchesFieldOrEnumConstant(elt, memberName);
       }
       // The order of kinds is important
-      for (ElementKind kind : Arrays.asList(ElementKind.FIELD, ElementKind.CONSTRUCTOR, ElementKind.METHOD)) {
+      for (ElementKind kind : Arrays.asList(ElementKind.FIELD, ElementKind.ENUM_CONSTANT, ElementKind.CONSTRUCTOR, ElementKind.METHOD)) {
         for (Element memberElt : elementUtils.getAllMembers(typeElt)) {
           if(memberElt.getKind() == kind && memberMatcher.test(memberElt)) {
             return memberElt;

@@ -1,5 +1,6 @@
 package io.vertx.docgen;
 
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
@@ -45,7 +46,14 @@ public class TestGenProcessor extends JavaDocGenProcessor {
 
   @Override
   protected String toFieldLink(VariableElement elt) {
-    return "field";
+    switch (elt.getKind()) {
+      case ENUM_CONSTANT:
+        return "enumConstant";
+      case FIELD:
+        return "field";
+      default:
+        return "unsupported";
+    }
   }
 
   @Override
