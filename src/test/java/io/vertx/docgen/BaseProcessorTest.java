@@ -40,6 +40,11 @@ public class BaseProcessorTest {
   }
 
   @Test
+  public void testLinkToEnum() throws Exception {
+    assertEquals("link:enum[`TheEnum`]", assertDoc("io.vertx.test.linktoenum"));
+  }
+
+  @Test
   public void testLinkToField() throws Exception {
     assertEquals("link:field[`f1`]", assertDoc("io.vertx.test.linktofield"));
   }

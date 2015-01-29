@@ -22,7 +22,15 @@ public class TestGenProcessor extends JavaDocGenProcessor {
 
   @Override
   protected String toTypeLink(TypeElement elt) {
-    return "type";
+    switch (elt.getKind()) {
+      case INTERFACE:
+      case CLASS:
+        return "type";
+      case ENUM:
+        return "enum";
+      default:
+        return "unsupported";
+    }
   }
 
   @Override

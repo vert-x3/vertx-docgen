@@ -249,6 +249,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
           switch (resolvedElt.getKind()) {
             case CLASS:
             case INTERFACE:
+            case ENUM:
               link = toTypeLink((TypeElement) resolvedElt);
               break;
             case METHOD:
