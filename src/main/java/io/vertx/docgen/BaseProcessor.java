@@ -273,7 +273,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
               label = resolvedElt.getEnclosingElement().getSimpleName() + "." + label;
             }
           }
-          writer.append("link:").append(link).append("[`").append(label).append("`]");
+          writer.append("`link:").append(link).append("[").append(label).append("]`");
         }
         return v;
       }
