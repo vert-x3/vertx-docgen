@@ -67,7 +67,7 @@ public class DocGenProcessorTest {
       Compiler<DocGenProcessor> compiler = BaseProcessorTest.buildCompiler(new DocGenProcessor(), pkg);
       File dir = Files.createTempDirectory("docgen").toFile();
       dir.deleteOnExit();
-      compiler.setOption("docgen.output", new File(dir, "${name}").getAbsolutePath());
+      compiler.setOption("docgen.output", new File(dir, "$lang").getAbsolutePath());
       compiler.setOption("docgen.extension", ".ad.txt");
       compiler.assertCompile();
       File file = new File(new File(dir, "java"), pkg + ".ad.txt");

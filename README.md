@@ -45,7 +45,8 @@ The `{@link }` Javadoc tag creates a link to the Javadoc of a program element wh
 
 The annotation processor can be configured via annotation processing options:
 
-- `docgen.output` : path of the file output dir
+- `docgen.output` : path of the file output dir, the path may contain the token `$lang` that will be subsituted by
+the current language being generated (the `docgen.json` name field)
 - `docgen.extension` : the file extension to use when file names are generated, defaults to `.adoc`
 
 ## Example
