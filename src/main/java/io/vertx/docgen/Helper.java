@@ -24,6 +24,8 @@ import java.util.regex.Pattern;
  */
 class Helper {
 
+  static final Pattern LANG_PATTERN = Pattern.compile("(\\\\)?\\$lang");
+
   final Types typeUtils;
   final Elements elementUtils;
   final DocTrees docTrees;

@@ -38,6 +38,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -196,7 +198,19 @@ public abstract class BaseProcessor extends AbstractProcessor {
       @Override
       public Void visitText(TextTree node, Void v) {
         String body = node.getBody();
-        writer.append(body);
+        Matcher matcher = Helper.LANG_PATTERN.matcher(body);
+        int prev = 0;
+        while (matcher.find()) {
+          writer.append(body, prev, matcher.start());
+          if (matcher.group(1) != null) {
+            // \$lang
+            writer.append("$lang");
+          } else {
+            writer.append(getName());
+          }
+          prev = matcher.end();
+        }
+        writer.append(body, prev, body.length());
         return super.visitText(node, v);
       }
 

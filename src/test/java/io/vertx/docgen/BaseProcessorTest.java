@@ -181,6 +181,11 @@ public class BaseProcessorTest {
     assertEquals("<abc>abc_content</abc>\n<def attr=\"value\">def_content</def>\n<ghi>", assertDoc("io.vertx.test.markup"));
   }
 
+  @Test
+  public void testLang() throws Exception {
+    assertEquals("The $lang is : java", assertDoc("io.vertx.test.lang"));
+  }
+
   private Map<String, String> failDoc(String pkg) throws Exception {
     Compiler<TestGenProcessor> compiler = buildCompiler(new TestGenProcessor(), pkg);
     compiler.failCompile();

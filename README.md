@@ -36,6 +36,14 @@ The `{@link }` Javadoc tag includes the referenced elements when this element is
 annotation (otherwise it will just create a link). The `@Source` annotation can annotate a single method, a class
 or a package.
 
+### Lang token
+
+The `$lang` token is replaced by the processed language in:
+- `docgen.output`
+- processed text (@Source is exluded)
+
+The `\$lang` espaces to `$lang`.
+
 ### Referencing program elements
 
 The `{@link }` Javadoc tag creates a link to the Javadoc of a program element when the target is
