@@ -50,13 +50,25 @@
   <build>
     <pluginManagement>
       <plugins>
+
+        <!-- Don't compile io.vertx.test since that's what our test resources -->
+        <plugin>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <executions>
+            <execution>
+              <id>default-testCompile</id>
+              <configuration>
+                <testExcludes>
+                  <testExclude>io/vertx/test/**</testExclude>
+                </testExcludes>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
           <configuration>
-            <additionalClasspathElements>
-              <additionalClasspathElement>${project.build.testSourceDirectory}</additionalClasspathElement>
-            </additionalClasspathElements>
           </configuration>
         </plugin>
       </plugins>

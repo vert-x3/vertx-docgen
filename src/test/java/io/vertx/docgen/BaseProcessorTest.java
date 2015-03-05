@@ -3,14 +3,25 @@ package io.vertx.docgen;
 import org.junit.Test;
 
 import javax.annotation.processing.Processor;
+import javax.lang.model.element.TypeElement;
+import javax.tools.StandardLocation;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.lang.*;
-import java.net.URL;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+import java.util.jar.Attributes;
+import java.util.jar.Manifest;
 
 import static org.junit.Assert.*;
 
@@ -186,6 +197,43 @@ public class BaseProcessorTest {
     assertEquals("The $lang is : java", assertDoc("io.vertx.test.lang"));
   }
 
+  @Test
+  public void testResolveLink() throws Exception {
+    Compiler<TestGenProcessor> compiler = buildCompiler(new TestGenProcessor(), "io.vertx.test.linkresolution.resolvable");
+    compiler.assertCompile();
+    File abc = compiler.classOutput;
+    File metaInf = new File(abc, "META-INF");
+    assertTrue(metaInf.mkdir());
+    File manifest = new File(metaInf, "MANIFEST.MF");
+    Manifest m = new Manifest();
+    m.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
+    m.getMainAttributes().put(new Attributes.Name("Maven-Group-Id"), "foo");
+    m.getMainAttributes().put(new Attributes.Name("Maven-Artifact-Id"), "bar");
+    m.getMainAttributes().put(new Attributes.Name("Maven-Version"), "1.2.3");
+    try (OutputStream out = new FileOutputStream(manifest)) {
+      m.write(out);
+    }
+    LinkedList<Coordinate> resolved = new LinkedList<>();
+    compiler = buildCompiler(new TestGenProcessor() {
+      @Override
+      protected String toTypeLink(TypeElement elt) {
+        resolved.add(resolveCoordinate(elt));
+        return super.toTypeLink(elt);
+      }
+    }, "io.vertx.test.linkresolution.resolving");
+    List<File> files = new ArrayList<>();
+    files.add(abc);
+    compiler.fileManager.getLocation(StandardLocation.CLASS_PATH).forEach(files::add);
+    compiler.fileManager.setLocation(StandardLocation.CLASS_PATH, files);
+    compiler.assertCompile();
+    String s = compiler.processor.getDoc("io.vertx.test.linkresolution.resolving");
+    assertEquals("`link:type[ResolvableType]`", s);
+    assertEquals(1, resolved.size());
+    assertEquals("foo", resolved.get(0).getGroupId());
+    assertEquals("bar", resolved.get(0).getArtifactId());
+    assertEquals("1.2.3", resolved.get(0).getVersion());
+  }
+
   private Map<String, String> failDoc(String pkg) throws Exception {
     Compiler<TestGenProcessor> compiler = buildCompiler(new TestGenProcessor(), pkg);
     compiler.failCompile();
@@ -206,15 +254,31 @@ public class BaseProcessorTest {
       index++;
     }
     while (output.exists());
+    Path sourcePath = new File(output, "src/" + pkg.replace('.', '/')).toPath();
+    File classOutput = new File(output, "classes");
+    assertTrue(sourcePath.toFile().mkdirs());
     ArrayList<File> sources = new ArrayList<>();
-    for (URL url : Collections.list(BaseProcessorTest.class.getClassLoader().getResources(pkg.replace('.', '/')))) {
-      File root = new File(url.toURI());
-      Files.
-          find(root.toPath(), 100, (path, attrs) -> path.toString().endsWith(".java")).
-          map(Path::toFile).
-          forEach(sources::add);
-    }
+    Path fromPath = new File("src/test/java/" + pkg.replace('.', '/')).toPath();
+    SimpleFileVisitor<Path> visitor =  new SimpleFileVisitor<Path>() {
+      @Override
+      public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+        Path targetPath = sourcePath.resolve(fromPath.relativize(dir));
+        if (!Files.exists(targetPath)) {
+          Files.createDirectory(targetPath);
+        }
+        return FileVisitResult.CONTINUE;
+      }
+      @Override
+      public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+        Path copy = Files.copy(file, sourcePath.resolve(fromPath.relativize(file)));
+        if (copy.toString().endsWith(".java")) {
+          sources.add(copy.toFile());
+        }
+        return FileVisitResult.CONTINUE;
+      }
+    };
+    Files.walkFileTree(fromPath, visitor);
     assertTrue(sources.size() > 0);
-    return new Compiler<>(processor, sources, output);
+    return new Compiler<>(processor, sources, classOutput);
   }
 }

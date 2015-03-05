@@ -11,6 +11,7 @@ import com.sun.source.doctree.TextTree;
 import com.sun.source.util.DocTreeScanner;
 import com.sun.source.util.DocTrees;
 import com.sun.source.util.TreePath;
+import com.sun.tools.javac.code.Symbol;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;
@@ -26,10 +27,13 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
+import javax.tools.JavaFileObject;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Writer;
+import java.net.URI;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -38,6 +42,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.jar.Attributes;
+import java.util.jar.Manifest;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -138,6 +144,42 @@ public abstract class BaseProcessor extends AbstractProcessor {
     } else {
       return fileName;
     }
+  }
+
+  /**
+   * Resolve the coordinate of the type element, this method returns either:
+   * <ul>
+   *   <li>a {@link io.vertx.docgen.Coordinate} object, the coordinate object can have null fields</li>
+   *   <li>{@code null} : the current element is being compiled, which likely means create a local link</li>
+   * </ul>
+   *
+   * @param typeElt the type element to resolve
+   * @return the resolved coordinate object or null if the element is locally compiled
+   */
+  protected Coordinate resolveCoordinate(TypeElement typeElt) {
+    try {
+      Symbol.ClassSymbol cs = (Symbol.ClassSymbol) typeElt;
+      JavaFileObject cf = cs.classfile;
+      String uri = cf.toUri().toString();
+      if (uri.endsWith(".class")) {
+        URI manifestURI = new URI(uri.substring(0, uri.length() - (typeElt.getQualifiedName().toString().length() + 6)) + "META-INF/MANIFEST.MF");
+        InputStream manifestIs = manifestURI.toURL().openStream();
+        if (manifestIs != null) {
+          Manifest manifest = new Manifest(manifestIs);
+          Attributes attributes = manifest.getMainAttributes();
+          String groupId = attributes.getValue(new Attributes.Name("Maven-Group-Id"));
+          String artifactId = attributes.getValue(new Attributes.Name("Maven-Artifact-Id"));
+          String version = attributes.getValue(new Attributes.Name("Maven-Version"));
+          return new Coordinate(groupId, artifactId, version);
+        }
+      } else {
+        // .java source we can link locally
+        return null;
+      }
+    } catch (Exception ignore) {
+      //
+    }
+    return new Coordinate(null, null, null);
   }
 
   protected abstract String toTypeLink(TypeElement elt);

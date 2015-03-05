@@ -28,7 +28,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class Compiler<P extends Processor> {
 
-  final File dest;
+  final File classOutput;
   final Collection<File> sources;
   final P processor;
   final StandardJavaFileManager fileManager;
@@ -36,10 +36,10 @@ public class Compiler<P extends Processor> {
   final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
   final Map<String, String> options = new HashMap<>();
 
-  public Compiler(P processor, Collection<File> sources, File dest) {
+  public Compiler(P processor, Collection<File> sources, File classOutput) {
     JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
     this.fileManager = compiler.getStandardFileManager(diagnostics, Locale.ENGLISH, Charset.forName("UTF-8"));
-    this.dest = dest;
+    this.classOutput = classOutput;
     this.sources = sources;
     this.processor = processor;
   }
@@ -72,12 +72,12 @@ public class Compiler<P extends Processor> {
   }
 
   private JavaCompiler.CompilationTask createTask(Collection<File> sources, DiagnosticListener<? super JavaFileObject> diagnostics) {
-    if (!dest.mkdirs()) {
-      assertTrue(dest.exists());
+    if (!classOutput.mkdirs()) {
+      assertTrue(classOutput.exists());
     }
-    assertTrue(dest.isDirectory());
+    assertTrue(classOutput.isDirectory());
     try {
-      fileManager.setLocation(StandardLocation.CLASS_OUTPUT, Collections.singletonList(dest));
+      fileManager.setLocation(StandardLocation.CLASS_OUTPUT, Collections.singletonList(classOutput));
     } catch (IOException e) {
       throw new AssertionError("Could not set location", e);
     }

@@ -39,7 +39,22 @@ public class JavaDocGenProcessor extends BaseProcessor {
 
   @Override
   protected String toTypeLink(TypeElement elt) {
-    return "apidocs/" + elt.getQualifiedName().toString().replace('.', '/') + ".html";
+/*
+    String id = resolveId(elt);
+    if (id == null) {
+      // Not really resolvable for now return empty link
+      return "";
+    } else {
+      String prefix;
+      if (id.isEmpty()) {
+        prefix = "";
+      } else {
+        prefix = "../../" + id + "/java/";
+      }
+      return prefix + "apidocs/" + elt.getQualifiedName().toString().replace('.', '/') + ".html";
+    }
+*/
+    return "../../apidocs/" + elt.getQualifiedName().toString().replace('.', '/') + ".html";
   }
 
   @Override
