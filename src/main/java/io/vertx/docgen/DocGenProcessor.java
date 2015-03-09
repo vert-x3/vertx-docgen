@@ -78,26 +78,26 @@ public class DocGenProcessor extends BaseProcessor {
   }
 
   @Override
-  protected String toTypeLink(TypeElement elt) {
-    return current.eval("toTypeLink", elt);
+  protected String toTypeLink(TypeElement elt, Coordinate coordinate) {
+    return current.eval("toTypeLink", elt, coordinate);
   }
 
   @Override
-  protected String toConstructorLink(ExecutableElement elt) {
-    return current.eval("toConstructorLink", elt);
+  protected String toConstructorLink(ExecutableElement elt, Coordinate coordinate) {
+    return current.eval("toConstructorLink", elt, coordinate);
   }
 
   @Override
-  protected String toMethodLink(ExecutableElement elt) {
-    return current.eval("toMethodLink", elt);
+  protected String toMethodLink(ExecutableElement elt, Coordinate coordinate) {
+    return current.eval("toMethodLink", elt, coordinate);
   }
 
   @Override
-  protected String toFieldLink(VariableElement elt) {
+  protected String toFieldLink(VariableElement elt, Coordinate coordinate) {
     return current.eval("toFieldLink", elt);
   }
 
-  static class Generator {
+  class Generator {
 
     final String name;
     final ScriptEngine engine;
@@ -113,7 +113,7 @@ public class DocGenProcessor extends BaseProcessor {
       try {
         ScriptObjectMirror function = (ScriptObjectMirror) engine.eval(functionName);
         currentThread.setContextClassLoader(DocGenProcessor.class.getClassLoader());
-        return (String) function.call(this, args);
+        return (String) function.call(DocGenProcessor.this, args);
       } catch (ScriptException e) {
         e.printStackTrace();
         throw new RuntimeException(e);

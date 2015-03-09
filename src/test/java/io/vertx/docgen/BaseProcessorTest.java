@@ -198,11 +198,11 @@ public class BaseProcessorTest {
   }
 
   @Test
-  public void testResolveLink() throws Exception {
+  public void testResolveLinkWithClass() throws Exception {
     Compiler<TestGenProcessor> compiler = buildCompiler(new TestGenProcessor(), "io.vertx.test.linkresolution.resolvable");
     compiler.assertCompile();
-    File abc = compiler.classOutput;
-    File metaInf = new File(abc, "META-INF");
+    File dependency = compiler.classOutput;
+    File metaInf = new File(dependency, "META-INF");
     assertTrue(metaInf.mkdir());
     File manifest = new File(metaInf, "MANIFEST.MF");
     Manifest m = new Manifest();
@@ -216,13 +216,13 @@ public class BaseProcessorTest {
     LinkedList<Coordinate> resolved = new LinkedList<>();
     compiler = buildCompiler(new TestGenProcessor() {
       @Override
-      protected String toTypeLink(TypeElement elt) {
-        resolved.add(resolveCoordinate(elt));
-        return super.toTypeLink(elt);
+      protected String toTypeLink(TypeElement elt, Coordinate coordinate) {
+        resolved.add(coordinate);
+        return super.toTypeLink(elt, coordinate);
       }
     }, "io.vertx.test.linkresolution.resolving");
     List<File> files = new ArrayList<>();
-    files.add(abc);
+    files.add(dependency);
     compiler.fileManager.getLocation(StandardLocation.CLASS_PATH).forEach(files::add);
     compiler.fileManager.setLocation(StandardLocation.CLASS_PATH, files);
     compiler.assertCompile();
@@ -232,6 +232,40 @@ public class BaseProcessorTest {
     assertEquals("foo", resolved.get(0).getGroupId());
     assertEquals("bar", resolved.get(0).getArtifactId());
     assertEquals("1.2.3", resolved.get(0).getVersion());
+  }
+
+  @Test
+  public void testResolveLinkWithSourceAndClass() throws Exception {
+    Compiler<TestGenProcessor> compiler = buildCompiler(new TestGenProcessor(), "io.vertx.test.linkresolution.resolvable");
+    compiler.assertCompile();
+    File dependency = compiler.classOutput;
+    File metaInf = new File(dependency, "META-INF");
+    assertTrue(metaInf.mkdir());
+    File manifest = new File(metaInf, "MANIFEST.MF");
+    Manifest m = new Manifest();
+    m.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
+    m.getMainAttributes().put(new Attributes.Name("Maven-Group-Id"), "foo");
+    m.getMainAttributes().put(new Attributes.Name("Maven-Artifact-Id"), "bar");
+    m.getMainAttributes().put(new Attributes.Name("Maven-Version"), "1.2.3");
+    try (OutputStream out = new FileOutputStream(manifest)) {
+      m.write(out);
+    }
+    LinkedList<Coordinate> resolved = new LinkedList<>();
+    compiler = buildCompiler(new TestGenProcessor() {
+      @Override
+      protected String toTypeLink(TypeElement elt, Coordinate coordinate) {
+        resolved.add(coordinate);
+        return super.toTypeLink(elt, coordinate);
+      }
+    }, "io.vertx.test.linkresolution");
+    List<File> files = new ArrayList<>();
+    files.add(dependency);
+    compiler.fileManager.getLocation(StandardLocation.CLASS_PATH).forEach(files::add);
+    compiler.fileManager.setLocation(StandardLocation.CLASS_PATH, files);
+    compiler.assertCompile();
+    String s = compiler.processor.getDoc("io.vertx.test.linkresolution.resolving");
+    assertEquals("`link:type[ResolvableType]`", s);
+    assertEquals(Collections.<Coordinate>singletonList(null), resolved);
   }
 
   private Map<String, String> failDoc(String pkg) throws Exception {

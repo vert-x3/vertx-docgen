@@ -38,38 +38,23 @@ public class JavaDocGenProcessor extends BaseProcessor {
   }
 
   @Override
-  protected String toTypeLink(TypeElement elt) {
-/*
-    String id = resolveId(elt);
-    if (id == null) {
-      // Not really resolvable for now return empty link
-      return "";
-    } else {
-      String prefix;
-      if (id.isEmpty()) {
-        prefix = "";
-      } else {
-        prefix = "../../" + id + "/java/";
-      }
-      return prefix + "apidocs/" + elt.getQualifiedName().toString().replace('.', '/') + ".html";
-    }
-*/
+  protected String toTypeLink(TypeElement elt, Coordinate coordinate) {
     return "../../apidocs/" + elt.getQualifiedName().toString().replace('.', '/') + ".html";
   }
 
   @Override
-  protected String toConstructorLink(ExecutableElement elt) {
+  protected String toConstructorLink(ExecutableElement elt, Coordinate coordinate) {
     return toExecutableLink(elt, elt.getEnclosingElement().getSimpleName().toString());
   }
 
   @Override
-  protected String toMethodLink(ExecutableElement elt) {
+  protected String toMethodLink(ExecutableElement elt, Coordinate coordinate) {
     return toExecutableLink(elt, elt.getSimpleName().toString());
   }
 
   private String toExecutableLink(ExecutableElement elt, String name) {
     TypeElement typeElt = (TypeElement) elt.getEnclosingElement();
-    String link = toTypeLink(typeElt);
+    String link = toTypeLink(typeElt, null);
     StringBuilder anchor = new StringBuilder("#");
     anchor.append(name).append('-');
     TypeMirror type  = elt.asType();
@@ -86,9 +71,9 @@ public class JavaDocGenProcessor extends BaseProcessor {
   }
 
   @Override
-  protected String toFieldLink(VariableElement elt) {
+  protected String toFieldLink(VariableElement elt, Coordinate coordinate) {
     TypeElement typeElt = (TypeElement) elt.getEnclosingElement();
-    String link = toTypeLink(typeElt);
+    String link = toTypeLink(typeElt, null);
     return link + "#" + elt.getSimpleName();
   }
 

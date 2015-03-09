@@ -33,7 +33,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
-import java.net.URI;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -45,7 +45,6 @@ import java.util.Set;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -156,25 +155,28 @@ public abstract class BaseProcessor extends AbstractProcessor {
    * @param typeElt the type element to resolve
    * @return the resolved coordinate object or null if the element is locally compiled
    */
-  protected Coordinate resolveCoordinate(TypeElement typeElt) {
+  private Coordinate resolveCoordinate(TypeElement typeElt) {
     try {
       Symbol.ClassSymbol cs = (Symbol.ClassSymbol) typeElt;
-      JavaFileObject cf = cs.classfile;
-      String uri = cf.toUri().toString();
-      if (uri.endsWith(".class")) {
-        URI manifestURI = new URI(uri.substring(0, uri.length() - (typeElt.getQualifiedName().toString().length() + 6)) + "META-INF/MANIFEST.MF");
-        InputStream manifestIs = manifestURI.toURL().openStream();
-        if (manifestIs != null) {
-          Manifest manifest = new Manifest(manifestIs);
-          Attributes attributes = manifest.getMainAttributes();
-          String groupId = attributes.getValue(new Attributes.Name("Maven-Group-Id"));
-          String artifactId = attributes.getValue(new Attributes.Name("Maven-Artifact-Id"));
-          String version = attributes.getValue(new Attributes.Name("Maven-Version"));
-          return new Coordinate(groupId, artifactId, version);
-        }
-      } else {
+      if (cs.sourcefile != null && getURL(cs.sourcefile) != null) {
         // .java source we can link locally
         return null;
+      }
+      if (cs.classfile != null) {
+        JavaFileObject cf = cs.classfile;
+        URL classURL = getURL(cf);
+        if (classURL != null && classURL.getFile().endsWith(".class")) {
+          URL manifestURL = new URL(classURL.toString().substring(0, classURL.toString().length() - (typeElt.getQualifiedName().toString().length() + 6)) + "META-INF/MANIFEST.MF");
+          InputStream manifestIs = manifestURL.openStream();
+          if (manifestIs != null) {
+            Manifest manifest = new Manifest(manifestIs);
+            Attributes attributes = manifest.getMainAttributes();
+            String groupId = attributes.getValue(new Attributes.Name("Maven-Group-Id"));
+            String artifactId = attributes.getValue(new Attributes.Name("Maven-Artifact-Id"));
+            String version = attributes.getValue(new Attributes.Name("Maven-Version"));
+            return new Coordinate(groupId, artifactId, version);
+          }
+        }
       }
     } catch (Exception ignore) {
       //
@@ -182,13 +184,21 @@ public abstract class BaseProcessor extends AbstractProcessor {
     return new Coordinate(null, null, null);
   }
 
-  protected abstract String toTypeLink(TypeElement elt);
+  private URL getURL(JavaFileObject fileObject) {
+    try {
+      return fileObject.toUri().toURL();
+    } catch (Exception e) {
+      return null;
+    }
+  }
 
-  protected abstract String toConstructorLink(ExecutableElement elt);
+  protected abstract String toTypeLink(TypeElement elt, Coordinate coordinate);
 
-  protected abstract String toMethodLink(ExecutableElement elt);
+  protected abstract String toConstructorLink(ExecutableElement elt, Coordinate coordinate);
 
-  protected abstract String toFieldLink(VariableElement elt);
+  protected abstract String toMethodLink(ExecutableElement elt, Coordinate coordinate);
+
+  protected abstract String toFieldLink(VariableElement elt, Coordinate coordinate);
 
   protected abstract String renderSource(ExecutableElement elt, String source);
 
@@ -305,19 +315,30 @@ public abstract class BaseProcessor extends AbstractProcessor {
           switch (resolvedElt.getKind()) {
             case CLASS:
             case INTERFACE:
-            case ENUM:
-              link = toTypeLink((TypeElement) resolvedElt);
+            case ENUM: {
+              TypeElement typeElt = (TypeElement) resolvedElt;
+              link = toTypeLink(typeElt, resolveCoordinate(typeElt));
               break;
-            case METHOD:
-              link = toMethodLink((ExecutableElement) resolvedElt);
+            }
+            case METHOD: {
+              ExecutableElement methodElt = (ExecutableElement) resolvedElt;
+              TypeElement typeElt = (TypeElement) methodElt.getEnclosingElement();
+              link = toMethodLink(methodElt, resolveCoordinate(typeElt));
               break;
-            case CONSTRUCTOR:
-              link = toConstructorLink((ExecutableElement) resolvedElt);
+            }
+            case CONSTRUCTOR: {
+              ExecutableElement constructorElt = (ExecutableElement) resolvedElt;
+              TypeElement typeElt = (TypeElement) constructorElt.getEnclosingElement();
+              link = toConstructorLink(constructorElt, resolveCoordinate(typeElt));
               break;
+            }
             case FIELD:
-            case ENUM_CONSTANT:
-              link = toFieldLink((VariableElement) resolvedElt);
+            case ENUM_CONSTANT: {
+              VariableElement variableElt = (VariableElement) resolvedElt;
+              TypeElement typeElt = (TypeElement) variableElt.getEnclosingElement();
+              link = toFieldLink(variableElt, resolveCoordinate(typeElt));
               break;
+            }
             default:
               throw new UnsupportedOperationException("Not yet implemented " + resolvedElt + " with kind " + resolvedElt.getKind());
           }
