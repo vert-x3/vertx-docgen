@@ -20,6 +20,10 @@ function toFieldLink(elt) {
   return link + '#' + elt.getSimpleName().toString();
 }
 
+function resolveLabel(elt, label) {
+  return label;
+}
+
 function toExecutableLink(elt, name) {
   var typeElt = elt.getEnclosingElement();
   var link = toTypeLink(typeElt);

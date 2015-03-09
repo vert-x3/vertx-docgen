@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 
 import javax.annotation.processing.ProcessingEnvironment;
+import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
@@ -90,6 +91,12 @@ public class DocGenProcessor extends BaseProcessor {
   @Override
   protected String toMethodLink(ExecutableElement elt, Coordinate coordinate) {
     return current.eval("toMethodLink", elt, coordinate);
+  }
+
+  @Override
+  protected String resolveLabel(Element elt) {
+    String label = super.resolveLabel(elt);
+    return current.eval("resolveLabel", elt, label);
   }
 
   @Override

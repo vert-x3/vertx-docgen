@@ -203,6 +203,24 @@ public abstract class BaseProcessor extends AbstractProcessor {
   protected abstract String renderSource(ExecutableElement elt, String source);
 
   /**
+   * Resolve a label for the specified element, this is used when a link to a program element
+   * does not specify an explicit label.<p/>
+   *
+   * Subclasses can override it to implement a particular behavior for elements.
+   *
+   * @param elt the elt to resolve a label for
+   * @return the label
+   */
+  protected String resolveLabel(Element elt) {
+    String label = elt.getSimpleName().toString();
+    if (elt.getModifiers().contains(Modifier.STATIC) &&
+        (elt.getKind() == ElementKind.METHOD || elt.getKind() == ElementKind.FIELD)) {
+      label = elt.getEnclosingElement().getSimpleName() + "." + label;
+    }
+    return label;
+  }
+
+  /**
    * @return the current generator name
    */
   protected abstract String getName();
@@ -344,11 +362,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
           }
           String label = render(node.getLabel()).trim();
           if (label.length() == 0) {
-            label = resolvedElt.getSimpleName().toString();
-            if (resolvedElt.getModifiers().contains(Modifier.STATIC) &&
-                (resolvedElt.getKind() == ElementKind.METHOD || resolvedElt.getKind() == ElementKind.FIELD)) {
-              label = resolvedElt.getEnclosingElement().getSimpleName() + "." + label;
-            }
+            label = resolveLabel(resolvedElt);
           }
           writer.append("`link:").append(link).append("[").append(label).append("]`");
         }
