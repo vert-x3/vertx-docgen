@@ -19,7 +19,9 @@ import java.io.StringWriter;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
+import java.util.ServiceLoader;
 
 /**
  * A scriptable doc gen processor.
@@ -28,12 +30,14 @@ import java.util.List;
  */
 public class DocGenProcessor extends BaseProcessor {
 
-  private List<Generator> generators = new ArrayList<>();
-  private Generator current;
+  private List<DocGenerator> generators = new ArrayList<>();
+  private DocGenerator current;
 
   @Override
   public synchronized void init(ProcessingEnvironment processingEnv) {
     super.init(processingEnv);
+
+    // Init scripted generators
     ScriptEngineManager manager = new ScriptEngineManager();
     try {
       List<URL> docgenUrls = Collections.list(DocGenProcessor.class.getClassLoader().getResources("docgen.json"));
@@ -56,17 +60,28 @@ public class DocGenProcessor extends BaseProcessor {
     } catch (Exception e) {
       e.printStackTrace();
     }
+
+    // Service loader generators
+    Iterator<DocGenerator> it = ServiceLoader.load(DocGenerator.class, DocGenProcessor.class.getClassLoader()).iterator();
+    while (it.hasNext()) {
+      try {
+        generators.add(it.next());
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+    }
   }
 
   @Override
   protected String getName() {
-    return current.name;
+    return current.getName();
   }
 
   @Override
   protected void handleGen(PackageElement docElt) {
-    for (Generator generator : generators) {
+    for (DocGenerator generator : generators) {
       current = generator;
+      current.init(processingEnv);
       StringWriter buffer = new StringWriter();
       process(buffer, docElt);
       write(docElt, buffer.toString());
@@ -75,36 +90,35 @@ public class DocGenProcessor extends BaseProcessor {
 
   @Override
   protected String renderSource(ExecutableElement elt, String source) {
-    return current.eval("renderSource", elt, source);
+    return current.renderSource(elt, source);
   }
 
   @Override
   protected String toTypeLink(TypeElement elt, Coordinate coordinate) {
-    return current.eval("toTypeLink", elt, coordinate);
+    return current.toTypeLink(elt, coordinate);
   }
 
   @Override
   protected String toConstructorLink(ExecutableElement elt, Coordinate coordinate) {
-    return current.eval("toConstructorLink", elt, coordinate);
+    return current.toConstructorLink(elt, coordinate);
   }
 
   @Override
   protected String toMethodLink(ExecutableElement elt, Coordinate coordinate) {
-    return current.eval("toMethodLink", elt, coordinate);
+    return current.toMethodLink(elt, coordinate);
   }
 
   @Override
   protected String resolveLabel(Element elt) {
-    String label = super.resolveLabel(elt);
-    return current.eval("resolveLabel", elt, label);
+    return current.resolveLabel(elt);
   }
 
   @Override
   protected String toFieldLink(VariableElement elt, Coordinate coordinate) {
-    return current.eval("toFieldLink", elt);
+    return current.toFieldLink(elt, coordinate);
   }
 
-  class Generator {
+  class Generator implements DocGenerator {
 
     final String name;
     final ScriptEngine engine;
@@ -127,6 +141,50 @@ public class DocGenProcessor extends BaseProcessor {
       } finally {
         currentThread.setContextClassLoader(prev);
       }
+    }
+
+    @Override
+    public void init(ProcessingEnvironment env) {
+    }
+
+    @Override
+    public String getName() {
+      return name;
+    }
+
+    @Override
+    public String renderSource(ExecutableElement elt, String source) {
+      return eval("renderSource", elt, source);
+    }
+
+    @Override
+    public String toTypeLink(TypeElement elt, Coordinate coordinate) {
+      return eval("toTypeLink", elt, coordinate);
+    }
+
+    @Override
+    public String toConstructorLink(ExecutableElement elt, Coordinate coordinate) {
+      return eval("toConstructorLink", elt, coordinate);
+    }
+
+    @Override
+    public String toMethodLink(ExecutableElement elt, Coordinate coordinate) {
+      return eval("toMethodLink", elt, coordinate);
+    }
+
+    @Override
+    public String toFieldLink(VariableElement elt, Coordinate coordinate) {
+      return eval("toFieldLink", elt, coordinate);
+    }
+
+    @Override
+    public String resolveLabel(Element elt) {
+      String label = DocGenProcessor.super.resolveLabel(elt);
+      String s = eval("resolveLabel", elt, label);
+      if (s != null) {
+        label = s;
+      }
+      return label;
     }
   }
 }
