@@ -268,6 +268,19 @@ public class BaseProcessorTest {
     assertEquals(Collections.<Coordinate>singletonList(null), resolved);
   }
 
+  @Test
+  public void testLinkUnresolved() throws Exception {
+    Compiler<TestGenProcessor> compiler = buildCompiler(new TestGenProcessor() {
+      @Override
+      protected String toTypeLink(TypeElement elt, Coordinate coordinate) {
+        return null;
+      }
+    }, "io.vertx.test.linkunresolved");
+    compiler.assertCompile();
+    String s = compiler.processor.getDoc("io.vertx.test.linkunresolved");
+    assertEquals("TheClass", s);
+  }
+
   private Map<String, String> failDoc(String pkg) throws Exception {
     Compiler<TestGenProcessor> compiler = buildCompiler(new TestGenProcessor(), pkg);
     compiler.failCompile();

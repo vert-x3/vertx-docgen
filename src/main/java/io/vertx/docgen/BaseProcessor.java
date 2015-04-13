@@ -364,7 +364,11 @@ public abstract class BaseProcessor extends AbstractProcessor {
           if (label.length() == 0) {
             label = resolveLabel(resolvedElt);
           }
-          writer.append("`link:").append(link).append("[").append(label).append("]`");
+          if (link != null)  {
+            writer.append("`link:").append(link).append("[").append(label).append("]`");
+          } else {
+            writer.append(label);
+          }
         }
         return v;
       }
