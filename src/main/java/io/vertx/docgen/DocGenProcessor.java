@@ -115,7 +115,8 @@ public class DocGenProcessor extends BaseProcessor {
 
   @Override
   protected String resolveLabel(Element elt) {
-    return current.resolveLabel(elt);
+    String label = DocGenProcessor.super.resolveLabel(elt);
+    return current.resolveLabel(elt, label);
   }
 
   class Generator implements DocGenerator {
@@ -178,13 +179,12 @@ public class DocGenProcessor extends BaseProcessor {
     }
 
     @Override
-    public String resolveLabel(Element elt) {
-      String label = DocGenProcessor.super.resolveLabel(elt);
-      String s = eval("resolveLabel", elt, label);
+    public String resolveLabel(Element elt, String defaultLabel) {
+      String s = eval("resolveLabel", elt, defaultLabel);
       if (s != null) {
-        label = s;
+        defaultLabel = s;
       }
-      return label;
+      return defaultLabel;
     }
   }
 }

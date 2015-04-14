@@ -74,7 +74,8 @@ public interface DocGenerator {
    * Resolve a label.
    *
    * @param elt the labelled element
+   * @param defaultLabel the default label
    * @return the resolved label or null if a label cannot be resolved
    */
-  String resolveLabel(Element elt);
+  String resolveLabel(Element elt, String defaultLabel);
 }
