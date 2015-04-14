@@ -278,7 +278,7 @@ public class BaseProcessorTest {
     }, "io.vertx.test.linkunresolved");
     compiler.assertCompile();
     String s = compiler.processor.getDoc("io.vertx.test.linkunresolved");
-    assertEquals("TheClass", s);
+    assertEquals("`TheClass`", s);
   }
 
   private Map<String, String> failDoc(String pkg) throws Exception {

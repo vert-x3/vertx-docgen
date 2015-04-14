@@ -367,7 +367,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
           if (link != null)  {
             writer.append("`link:").append(link).append("[").append(label).append("]`");
           } else {
-            writer.append(label);
+            writer.append("`").append(label).append("`");
           }
         }
         return v;
