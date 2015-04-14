@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.ServiceLoader;
 
 /**
- * A scriptable doc gen processor.
+ * A doc gen processor that runs multiple generators at once.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
@@ -94,28 +94,28 @@ public class DocGenProcessor extends BaseProcessor {
   }
 
   @Override
-  protected String toTypeLink(TypeElement elt, Coordinate coordinate) {
-    return current.toTypeLink(elt, coordinate);
+  protected String resolveTypeLink(TypeElement elt, Coordinate coordinate) {
+    return current.resolveTypeLink(elt, coordinate);
   }
 
   @Override
-  protected String toConstructorLink(ExecutableElement elt, Coordinate coordinate) {
-    return current.toConstructorLink(elt, coordinate);
+  protected String resolveConstructorLink(ExecutableElement elt, Coordinate coordinate) {
+    return current.resolveConstructorLink(elt, coordinate);
   }
 
   @Override
-  protected String toMethodLink(ExecutableElement elt, Coordinate coordinate) {
-    return current.toMethodLink(elt, coordinate);
+  protected String resolveMethodLink(ExecutableElement elt, Coordinate coordinate) {
+    return current.resolveMethodLink(elt, coordinate);
+  }
+
+  @Override
+  protected String resolveFieldLink(VariableElement elt, Coordinate coordinate) {
+    return current.resolveFieldLink(elt, coordinate);
   }
 
   @Override
   protected String resolveLabel(Element elt) {
     return current.resolveLabel(elt);
-  }
-
-  @Override
-  protected String toFieldLink(VariableElement elt, Coordinate coordinate) {
-    return current.toFieldLink(elt, coordinate);
   }
 
   class Generator implements DocGenerator {
@@ -158,22 +158,22 @@ public class DocGenProcessor extends BaseProcessor {
     }
 
     @Override
-    public String toTypeLink(TypeElement elt, Coordinate coordinate) {
+    public String resolveTypeLink(TypeElement elt, Coordinate coordinate) {
       return eval("toTypeLink", elt, coordinate);
     }
 
     @Override
-    public String toConstructorLink(ExecutableElement elt, Coordinate coordinate) {
+    public String resolveConstructorLink(ExecutableElement elt, Coordinate coordinate) {
       return eval("toConstructorLink", elt, coordinate);
     }
 
     @Override
-    public String toMethodLink(ExecutableElement elt, Coordinate coordinate) {
+    public String resolveMethodLink(ExecutableElement elt, Coordinate coordinate) {
       return eval("toMethodLink", elt, coordinate);
     }
 
     @Override
-    public String toFieldLink(VariableElement elt, Coordinate coordinate) {
+    public String resolveFieldLink(VariableElement elt, Coordinate coordinate) {
       return eval("toFieldLink", elt, coordinate);
     }
 

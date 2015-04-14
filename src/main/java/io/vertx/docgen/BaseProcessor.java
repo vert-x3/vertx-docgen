@@ -192,13 +192,13 @@ public abstract class BaseProcessor extends AbstractProcessor {
     }
   }
 
-  protected abstract String toTypeLink(TypeElement elt, Coordinate coordinate);
+  protected abstract String resolveTypeLink(TypeElement elt, Coordinate coordinate);
 
-  protected abstract String toConstructorLink(ExecutableElement elt, Coordinate coordinate);
+  protected abstract String resolveConstructorLink(ExecutableElement elt, Coordinate coordinate);
 
-  protected abstract String toMethodLink(ExecutableElement elt, Coordinate coordinate);
+  protected abstract String resolveMethodLink(ExecutableElement elt, Coordinate coordinate);
 
-  protected abstract String toFieldLink(VariableElement elt, Coordinate coordinate);
+  protected abstract String resolveFieldLink(VariableElement elt, Coordinate coordinate);
 
   protected abstract String renderSource(ExecutableElement elt, String source);
 
@@ -335,26 +335,26 @@ public abstract class BaseProcessor extends AbstractProcessor {
             case INTERFACE:
             case ENUM: {
               TypeElement typeElt = (TypeElement) resolvedElt;
-              link = toTypeLink(typeElt, resolveCoordinate(typeElt));
+              link = resolveTypeLink(typeElt, resolveCoordinate(typeElt));
               break;
             }
             case METHOD: {
               ExecutableElement methodElt = (ExecutableElement) resolvedElt;
               TypeElement typeElt = (TypeElement) methodElt.getEnclosingElement();
-              link = toMethodLink(methodElt, resolveCoordinate(typeElt));
+              link = resolveMethodLink(methodElt, resolveCoordinate(typeElt));
               break;
             }
             case CONSTRUCTOR: {
               ExecutableElement constructorElt = (ExecutableElement) resolvedElt;
               TypeElement typeElt = (TypeElement) constructorElt.getEnclosingElement();
-              link = toConstructorLink(constructorElt, resolveCoordinate(typeElt));
+              link = resolveConstructorLink(constructorElt, resolveCoordinate(typeElt));
               break;
             }
             case FIELD:
             case ENUM_CONSTANT: {
               VariableElement variableElt = (VariableElement) resolvedElt;
               TypeElement typeElt = (TypeElement) variableElt.getEnclosingElement();
-              link = toFieldLink(variableElt, resolveCoordinate(typeElt));
+              link = resolveFieldLink(variableElt, resolveCoordinate(typeElt));
               break;
             }
             default:

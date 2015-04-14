@@ -216,9 +216,9 @@ public class BaseProcessorTest {
     LinkedList<Coordinate> resolved = new LinkedList<>();
     compiler = buildCompiler(new TestGenProcessor() {
       @Override
-      protected String toTypeLink(TypeElement elt, Coordinate coordinate) {
+      protected String resolveTypeLink(TypeElement elt, Coordinate coordinate) {
         resolved.add(coordinate);
-        return super.toTypeLink(elt, coordinate);
+        return super.resolveTypeLink(elt, coordinate);
       }
     }, "io.vertx.test.linkresolution.resolving");
     List<File> files = new ArrayList<>();
@@ -253,9 +253,9 @@ public class BaseProcessorTest {
     LinkedList<Coordinate> resolved = new LinkedList<>();
     compiler = buildCompiler(new TestGenProcessor() {
       @Override
-      protected String toTypeLink(TypeElement elt, Coordinate coordinate) {
+      protected String resolveTypeLink(TypeElement elt, Coordinate coordinate) {
         resolved.add(coordinate);
-        return super.toTypeLink(elt, coordinate);
+        return super.resolveTypeLink(elt, coordinate);
       }
     }, "io.vertx.test.linkresolution");
     List<File> files = new ArrayList<>();
@@ -272,7 +272,7 @@ public class BaseProcessorTest {
   public void testLinkUnresolved() throws Exception {
     Compiler<TestGenProcessor> compiler = buildCompiler(new TestGenProcessor() {
       @Override
-      protected String toTypeLink(TypeElement elt, Coordinate coordinate) {
+      protected String resolveTypeLink(TypeElement elt, Coordinate coordinate) {
         return null;
       }
     }, "io.vertx.test.linkunresolved");

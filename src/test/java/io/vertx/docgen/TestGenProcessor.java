@@ -21,7 +21,7 @@ public class TestGenProcessor extends JavaDocGenProcessor {
   }
 
   @Override
-  protected String toTypeLink(TypeElement elt, Coordinate coordinate) {
+  protected String resolveTypeLink(TypeElement elt, Coordinate coordinate) {
     switch (elt.getKind()) {
       case INTERFACE:
       case CLASS:
@@ -34,17 +34,17 @@ public class TestGenProcessor extends JavaDocGenProcessor {
   }
 
   @Override
-  protected String toConstructorLink(ExecutableElement elt, Coordinate coordinate) {
+  protected String resolveConstructorLink(ExecutableElement elt, Coordinate coordinate) {
     return "constructor";
   }
 
   @Override
-  protected String toMethodLink(ExecutableElement elt, Coordinate coordinate) {
+  protected String resolveMethodLink(ExecutableElement elt, Coordinate coordinate) {
     return "method";
   }
 
   @Override
-  protected String toFieldLink(VariableElement elt, Coordinate coordinate) {
+  protected String resolveFieldLink(VariableElement elt, Coordinate coordinate) {
     switch (elt.getKind()) {
       case ENUM_CONSTANT:
         return "enumConstant";
