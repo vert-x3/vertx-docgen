@@ -66,6 +66,9 @@ class Helper {
       String memberName = signatureMatcher.group(1);
       String typeName = signature.substring(0, signatureMatcher.start());
       TypeElement typeElt = elementUtils.getTypeElement(typeName);
+      if (typeElt == null) {
+        return null;
+      }
       Predicate<? super Element> memberMatcher;
       if (signatureMatcher.group(2) != null) {
         String t = signatureMatcher.group(2).trim();

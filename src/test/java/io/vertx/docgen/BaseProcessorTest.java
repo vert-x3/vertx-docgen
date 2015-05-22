@@ -281,6 +281,11 @@ public class BaseProcessorTest {
     assertEquals("`TheClass`", s);
   }
 
+  @Test
+  public void testLinkUnresolvedTypeWithSignature() throws Exception {
+    failDoc("io.vertx.test.linkunresolvedtypewithsignature");
+  }
+
   private Map<String, String> failDoc(String pkg) throws Exception {
     Compiler<TestGenProcessor> compiler = buildCompiler(new TestGenProcessor(), pkg);
     compiler.failCompile();
