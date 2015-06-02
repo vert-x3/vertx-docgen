@@ -1,5 +1,7 @@
 # Docgen
 
+[![Build Status](https://vertx.ci.cloudbees.com/buildStatus/icon?job=vert.x3-docgen)](https://vertx.ci.cloudbees.com/view/vert.x-3/job/vert.x3-docgen/)
+
 ## Description
 
 Create an Asciidoc document from package Javadoc. It comes as an annotation processor that process the various
