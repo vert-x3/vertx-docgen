@@ -284,6 +284,15 @@ public abstract class BaseProcessor extends AbstractProcessor {
         return super.visitText(node, v);
       }
 
+      /**
+       * Handles both literal and code. We generate the asciidoc output using {@literal `}.
+       */
+      @Override
+      public Void visitLiteral(LiteralTree node, Void aVoid) {
+        writer.append("`").append(node.getBody().getBody()).append("`");
+        return super.visitLiteral(node, aVoid);
+      }
+
       @Override
       public Void visitStartElement(StartElementTree node, Void v) {
         copyContent(node);
