@@ -1,13 +1,6 @@
 package io.vertx.docgen;
 
-import com.sun.source.doctree.DocCommentTree;
-import com.sun.source.doctree.DocTree;
-import com.sun.source.doctree.DocTreeVisitor;
-import com.sun.source.doctree.EndElementTree;
-import com.sun.source.doctree.ErroneousTree;
-import com.sun.source.doctree.LinkTree;
-import com.sun.source.doctree.StartElementTree;
-import com.sun.source.doctree.TextTree;
+import com.sun.source.doctree.*;
 import com.sun.source.util.DocTreeScanner;
 import com.sun.source.util.DocTrees;
 import com.sun.source.util.TreePath;
@@ -282,6 +275,12 @@ public abstract class BaseProcessor extends AbstractProcessor {
         }
         writer.append(body, prev, body.length());
         return super.visitText(node, v);
+      }
+
+      @Override
+      public Void visitEntity(EntityTree node, Void aVoid) {
+        writer.append(EntityUtils.unescapeEntity(node.getName().toString()));
+        return super.visitEntity(node, aVoid);
       }
 
       @Override
