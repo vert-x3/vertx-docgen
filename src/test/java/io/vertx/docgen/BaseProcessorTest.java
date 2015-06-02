@@ -193,6 +193,11 @@ public class BaseProcessorTest {
   }
 
   @Test
+  public void testCode() throws Exception {
+    assertEquals("This comment contains `some code here` and a `literal`.", assertDoc("io.vertx.test.code"));
+  }
+
+  @Test
   public void testLang() throws Exception {
     assertEquals("The $lang is : java", assertDoc("io.vertx.test.lang"));
   }

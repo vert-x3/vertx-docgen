@@ -21,6 +21,10 @@
  * === A sub section
  *
  * {@link test.proj.foofeature.subsection}
+ *
+ * === Let's see some code
+ *
+ * There is some code here: {@code System.out.println("Hello");}.
  */
 @Document
 package test.proj.foofeature;
