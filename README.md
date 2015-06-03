@@ -38,13 +38,17 @@ The `{@link }` Javadoc tag includes the referenced elements when this element is
 annotation (otherwise it will just create a link). The `@Source` annotation can annotate a single method, a class
 or a package.
 
+By default the source code is translated to the output language. This feature can be disabled with `@Source
+(translate=false)`. When including source code, the _closest_ (class, package, parent package...) `@Source` annotation
+ is looked up and the value of the `translate` attribute is used. 
+
 ### Lang token
 
 The `$lang` token is replaced by the processed language in:
 - `docgen.output`
-- processed text (@Source is exluded)
+- processed text (@Source is excluded)
 
-The `\$lang` espaces to `$lang`.
+The `\$lang` escapes to `$lang`.
 
 ### Referencing program elements
 
