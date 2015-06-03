@@ -1,6 +1,9 @@
 package io.vertx.docgen;
 
 import com.sun.source.doctree.*;
+import com.sun.source.doctree.ErroneousTree;
+import com.sun.source.doctree.LiteralTree;
+import com.sun.source.tree.*;
 import com.sun.source.util.DocTreeScanner;
 import com.sun.source.util.DocTrees;
 import com.sun.source.util.TreePath;
@@ -10,31 +13,14 @@ import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
-import javax.lang.model.element.Element;
-import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.Modifier;
-import javax.lang.model.element.PackageElement;
-import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.VariableElement;
+import javax.lang.model.element.*;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Writer;
+import java.io.*;
 import java.net.URL;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 import java.util.regex.Matcher;
@@ -118,7 +104,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
 
   /**
    * @return the extension obtained from processor option {@literal docgen.extension} defaults to {@literal .adoc}
-   *         when absent.
+   * when absent.
    */
   protected String getExtension() {
     String extension = processingEnv.getOptions().get("docgen.extension");
@@ -141,8 +127,8 @@ public abstract class BaseProcessor extends AbstractProcessor {
   /**
    * Resolve the coordinate of the type element, this method returns either:
    * <ul>
-   *   <li>a {@link io.vertx.docgen.Coordinate} object, the coordinate object can have null fields</li>
-   *   <li>{@code null} : the current element is being compiled, which likely means create a local link</li>
+   * <li>a {@link io.vertx.docgen.Coordinate} object, the coordinate object can have null fields</li>
+   * <li>{@code null} : the current element is being compiled, which likely means create a local link</li>
    * </ul>
    *
    * @param typeElt the type element to resolve
@@ -198,7 +184,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
   /**
    * Resolve a label for the specified element, this is used when a link to a program element
    * does not specify an explicit label.<p/>
-   *
+   * <p/>
    * Subclasses can override it to implement a particular behavior for elements.
    *
    * @param elt the elt to resolve a label for
@@ -237,7 +223,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
 
       private void copyContent(DocTree node) {
         int from = (int) docTrees.getSourcePositions().getStartPosition(pkgTree.getCompilationUnit(), doc, node);
-        int to = (int) docTrees.getSourcePositions().getEndPosition(pkgTree.getCompilationUnit(), doc, node);;
+        int to = (int) docTrees.getSourcePositions().getEndPosition(pkgTree.getCompilationUnit(), doc, node);
         writer.append(pkgSource, from, to);
       }
 
@@ -320,7 +306,15 @@ public abstract class BaseProcessor extends AbstractProcessor {
             switch (resolvedElt.getKind()) {
               case CONSTRUCTOR:
               case METHOD:
-                String fragment = renderSource((ExecutableElement) resolvedElt, source);
+                // Check whether or not the fragment must be translated
+                String fragment;
+                if (helper.hasToBeTranslated(resolvedElt)) {
+                  // Invoke the custom renderer, this may should the translation to the expected language.
+                  fragment = renderSource((ExecutableElement) resolvedElt, source);
+                } else {
+                  // Do not call the custom rendering process, just use the default / java one.
+                  fragment = defaultRenderSource((ExecutableElement) resolvedElt, source);
+                }
                 if (fragment != null) {
                   writer.literalMode();
                   writer.append(fragment);
@@ -328,7 +322,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
                 }
                 return v;
               default:
-                throw new UnsupportedOperationException("todo");
+                throw new UnsupportedOperationException("unsupported element: " + resolvedElt.getKind());
             }
           }
           String link;
@@ -366,7 +360,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
           if (label.length() == 0) {
             label = resolveLabel(resolvedElt);
           }
-          if (link != null)  {
+          if (link != null) {
             writer.append("`link:").append(link).append("[").append(label).append("]`");
           } else {
             writer.append("`").append(label).append("`");
@@ -390,7 +384,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
           relativeName = docElt.getQualifiedName() + getExtension();
         }
         File dir = new File(outputOpt);
-        for (int i = relativeName.indexOf('/');i != -1;i = relativeName.indexOf('/', i + 1)) {
+        for (int i = relativeName.indexOf('/'); i != -1; i = relativeName.indexOf('/', i + 1)) {
           dir = new File(dir, relativeName.substring(0, i));
           relativeName = relativeName.substring(i + 1);
         }
@@ -402,6 +396,60 @@ public abstract class BaseProcessor extends AbstractProcessor {
       } catch (IOException e) {
         e.printStackTrace();
       }
+    }
+  }
+
+  /**
+   * Render the source fragment for the Java language. Java being the pivot language, we consider this method as the
+   * _default_ behavior. This method is final as it must not be overridden by any extension.
+   *
+   * @param elt    the element
+   * @param source the source
+   * @return the fragment
+   */
+  protected final String defaultRenderSource(ExecutableElement elt, String source) {
+    TreePath resolvedTP = docTrees.getPath(elt);
+    CompilationUnitTree unit = resolvedTP.getCompilationUnit();
+    MethodTree methodTree = (MethodTree) resolvedTP.getLeaf();
+    BlockTree blockTree = methodTree.getBody();
+    // Get block
+    List<? extends StatementTree> statements = blockTree.getStatements();
+    if (statements.size() > 0) {
+      int from = (int) docTrees.getSourcePositions().getStartPosition(unit, statements.get(0));
+      int to = (int) docTrees.getSourcePositions().getEndPosition(unit, statements.get(statements.size() - 1));
+      // Correct boundaries
+      while (from > 1 && source.charAt(from - 1) != '\n') {
+        from--;
+      }
+      while (to < source.length() && source.charAt(to) != '\n') {
+        to++;
+      }
+      String block = source.substring(from, to);
+      // Determine margin
+      int blockMargin = Integer.MAX_VALUE;
+      LineMap lineMap = unit.getLineMap();
+      for (StatementTree statement : statements) {
+        int statementStart = (int) docTrees.getSourcePositions().getStartPosition(unit, statement);
+        int lineStart = statementStart;
+        while (lineMap.getLineNumber(statementStart) == lineMap.getLineNumber(lineStart - 1)) {
+          lineStart--;
+        }
+        blockMargin = Math.min(blockMargin, statementStart - lineStart);
+      }
+      // Crop the fragment
+      StringBuilder fragment = new StringBuilder();
+      for (Iterator<String> sc = new Scanner(block).useDelimiter("\n"); sc.hasNext(); ) {
+        String line = sc.next();
+        int margin = Math.min(blockMargin, line.length());
+        line = line.substring(margin);
+        fragment.append(line);
+        if (sc.hasNext()) {
+          fragment.append('\n');
+        }
+      }
+      return fragment.toString();
+    } else {
+      return null;
     }
   }
 

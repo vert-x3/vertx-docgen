@@ -143,6 +143,25 @@ class Helper {
   }
 
   /**
+   * Check the element is an example or not.
+   *
+   * @param elt the elt to check
+   * @return true when the checked element is an example
+   */
+  boolean hasToBeTranslated(Element elt) {
+    // Find the closest source annotation
+    // We are sure to have at least one as this method **must** be called after isExample.
+    Element current = elt;
+    Source source = current.getAnnotation(Source.class);
+    while (source == null) {
+      current = current.getEnclosingElement();
+      source = current.getAnnotation(Source.class);
+    }
+
+    return source.translate();
+  }
+
+  /**
    * Read the source code of the provided element, this returns the source of the entire related compilation unit.
    *
    * @param elt the element to load

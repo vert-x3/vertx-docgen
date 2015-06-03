@@ -15,4 +15,9 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE,ElementType.PACKAGE,ElementType.METHOD})
 @Retention(RetentionPolicy.CLASS)
 public @interface Source {
+
+  /**
+   * Enables or disables the translation of the annotated example.
+   */
+  boolean translate() default true;
 }

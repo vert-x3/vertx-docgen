@@ -1,5 +1,6 @@
 package io.vertx.docgen;
 
+import junit.framework.Assert;
 import org.junit.Test;
 
 import javax.annotation.processing.Processor;
@@ -197,6 +198,96 @@ public class BaseProcessorTest {
     assertEquals("This comment contains `some code here` and a `literal`.", assertDoc("io.vertx.test.code"));
   }
 
+  /**
+   * This test checks whether or not the source are translated depending on the {@link Source#translate()} attribute.
+   * It analyses the generation of a document using the default generator and a custom generator.
+   */
+  @Test
+  public void testSource() throws Exception {
+    String doc = assertDoc("io.vertx.test.source");
+
+    // Just use the Java processor - eveything is in lower case.
+
+    assertTrue("#1", doc.contains("# 1\n" +
+        "[source, java]\n" +
+        "----\n" +
+        "System.out.println(\"Hello\");\n" +
+        "----"));
+
+    assertTrue("#2", doc.contains("# 2\n" +
+        "[source, java]\n" +
+        "----\n" +
+        "System.out.println(\"Hello\");\n" +
+        "----"));
+
+    assertTrue("#3", doc.contains("# 3\n" +
+        "[source, java]\n" +
+        "----\n" +
+        "System.out.println(\"Hello\");\n" +
+        "----"));
+
+    assertTrue("#4", doc.contains("# 4\n" +
+        "[source, java]\n" +
+        "----\n" +
+        "System.out.println(\"Hello\");\n" +
+        "----"));
+
+    assertTrue("#5", doc.contains("# 5\n" +
+        "[source, java]\n" +
+        "----\n" +
+        "System.out.println(\"Hello\");\n" +
+        "----"));
+
+    assertTrue("#6", doc.contains("# 6\n" +
+        "[source, java]\n" +
+        "----\n" +
+        "System.out.println(\"Hello\");\n" +
+        "----"));
+
+    // Now with the custom generator
+    // Source that need to be translated is in uppercase, otherwise lowercase (regular)
+    // Are not translated:
+    // #2 - because of @Source(translate = false) on the class itself
+    // #4 - like #2 - override parent package configuration
+
+    doc = assertDocWithCustomGenerator("io.vertx.test.source");
+    assertTrue("#1", doc.contains("# 1\n" +
+        "[source, custom]\n" +
+        "----\n" +
+        "SYSTEM.OUT.PRINTLN(\"HELLO\");\n" +
+        "----"));
+
+    assertTrue("#2", doc.contains("# 2\n" +
+        "[source, custom]\n" +
+        "----\n" +
+        "System.out.println(\"Hello\");\n" +
+        "----"));
+
+    assertTrue("#3", doc.contains("# 3\n" +
+        "[source, custom]\n" +
+        "----\n" +
+        "SYSTEM.OUT.PRINTLN(\"HELLO\");\n" +
+        "----"));
+
+    assertTrue("#4", doc.contains("# 4\n" +
+        "[source, custom]\n" +
+        "----\n" +
+        "System.out.println(\"Hello\");\n" +
+        "----"));
+
+    assertTrue("#5", doc.contains("# 5\n" +
+        "[source, java]\n" +
+        "----\n" +
+        "SYSTEM.OUT.PRINTLN(\"HELLO\");\n" +
+        "----"));
+
+    assertTrue("#6", doc.contains("# 6\n" +
+        "[source, java]\n" +
+        "----\n" +
+        "SYSTEM.OUT.PRINTLN(\"HELLO\");\n" +
+        "----"));
+  }
+
   @Test
   public void testLang() throws Exception {
     assertEquals("The $lang is : java", assertDoc("io.vertx.test.lang"));
@@ -299,6 +390,12 @@ public class BaseProcessorTest {
 
   private String assertDoc(String pkg) throws Exception {
     Compiler<TestGenProcessor> compiler = buildCompiler(new TestGenProcessor(), pkg);
+    compiler.assertCompile();
+    return compiler.processor.getDoc(pkg);
+  }
+
+  private String assertDocWithCustomGenerator(String pkg) throws Exception {
+    Compiler<CustomTestGenProcessor> compiler = buildCompiler(new CustomTestGenProcessor(), pkg);
     compiler.assertCompile();
     return compiler.processor.getDoc(pkg);
   }
