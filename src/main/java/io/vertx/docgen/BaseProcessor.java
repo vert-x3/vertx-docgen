@@ -273,6 +273,12 @@ public abstract class BaseProcessor extends AbstractProcessor {
       }
 
       @Override
+      public Void visitEntity(EntityTree node, Void aVoid) {
+        writer.append(EntityUtils.unescapeEntity(node.getName().toString()));
+        return super.visitEntity(node, aVoid);
+      }
+
+      @Override
       public Void visitStartElement(StartElementTree node, Void v) {
         copyContent(node);
         return v;

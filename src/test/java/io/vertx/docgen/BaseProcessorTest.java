@@ -293,6 +293,20 @@ public class BaseProcessorTest {
     assertEquals("The $lang is : java", assertDoc("io.vertx.test.lang"));
   }
 
+
+  @Test
+  public void testEntities() throws Exception {
+    final String doc = assertDoc("io.vertx.test.entities");
+    assertTrue("Contains 'Foo & Bar'", doc.contains("Foo &amp; Bar"));
+    assertTrue("Contains '10 $'", doc.contains("10 $"));
+    assertTrue("Contains '10 €", doc.contains("10 €"));
+    assertTrue("Contains 'ß'", doc.contains("<p>Straße</p>"));
+    assertTrue("Contains 'ß'", doc.contains("<p>Straßen</p>"));
+    assertTrue("Contains '\\u00DF'", doc.contains("<p>\\u00DF</p>"));
+    assertTrue("Contains correct json", doc.contains("json.put(\"key\", " +
+        "\"\\u0000\\u0001\\u0080\\u009f\\u00a0\\u00ff\");\n"));
+  }
+
   @Test
   public void testResolveLinkWithClass() throws Exception {
     Compiler<TestGenProcessor> compiler = buildCompiler(new TestGenProcessor(), "io.vertx.test.linkresolution.resolvable");
