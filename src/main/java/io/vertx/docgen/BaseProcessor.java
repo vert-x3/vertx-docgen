@@ -327,6 +327,17 @@ public abstract class BaseProcessor extends AbstractProcessor {
                   writer.commentMode();
                 }
                 return v;
+              case CLASS:
+                if (helper.hasToBeTranslated(resolvedElt)) {
+                  throw new UnsupportedOperationException("File inclusion is only supported for not translated" +
+                      " Java classes");
+                }
+                if (source != null) {
+                  writer.literalMode();
+                  writer.append(source);
+                  writer.commentMode();
+                }
+                return v;
               default:
                 throw new UnsupportedOperationException("unsupported element: " + resolvedElt.getKind());
             }

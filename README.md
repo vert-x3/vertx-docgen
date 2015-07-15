@@ -41,6 +41,16 @@ or a package.
 By default the source code is translated to the output language. This feature can be disabled with `@Source
 (translate=false)`. When including source code, the _closest_ (class, package, parent package...) `@Source` annotation
  is looked up and the value of the `translate` attribute is used. 
+ 
+When `translate` is set to `false`, it supports the inclusion of Java file (entire file) in the documentation with 
+the following syntax:
+
+```
+[source, java]
+----
+{@link org.acme.MyClass}
+----
+```
 
 ### Lang token
 
