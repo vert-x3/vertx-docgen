@@ -451,15 +451,16 @@ public abstract class BaseProcessor extends AbstractProcessor {
     StringBuilder processed = new StringBuilder();
     Iterator<String> iterator = lines.iterator();
     while (iterator.hasNext()) {
-      String line = iterator.next().trim();
-      if (!PostProcessor.isBlockDeclaration(line)) {
+      String line = iterator.next();
+      String trimmedLine = line.trim();
+      if (!PostProcessor.isBlockDeclaration(trimmedLine)) {
         processed.append(line);
         if (iterator.hasNext()) {
           processed.append("\n");
         }
       } else {
-        String name = PostProcessor.getProcessorName(line);
-        String[] attributes = PostProcessor.getProcessorAttributes(line);
+        String name = PostProcessor.getProcessorName(trimmedLine);
+        String[] attributes = PostProcessor.getProcessorAttributes(trimmedLine);
         PostProcessor postProcessor = getPostProcessor(name);
         if (postProcessor == null) {
           processed.append(line);

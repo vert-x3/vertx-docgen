@@ -8,7 +8,7 @@
  *
  * [source]
  * ----
- * System.out.println("Bye");
+ *   System.out.println("Bye");
  * ----
  */
 @Document() package io.vertx.test.postprocessors.code;

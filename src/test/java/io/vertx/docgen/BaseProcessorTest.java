@@ -463,7 +463,7 @@ public class BaseProcessorTest {
     assertThat(processed, containsString("[source]"));
     assertThat(processed, containsString("----"));
     assertThat(processed, containsString("System.out.println(\"Hello\");"));
-    assertThat(processed, containsString("System.out.println(\"Bye\");"));
+    assertThat(processed, containsString("  System.out.println(\"Bye\");"));
   }
 
   @Test
