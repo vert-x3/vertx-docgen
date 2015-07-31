@@ -1,6 +1,5 @@
 package io.vertx.docgen;
 
-import junit.framework.Assert;
 import org.junit.Test;
 
 import javax.annotation.processing.Processor;
@@ -10,20 +9,17 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.lang.*;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.*;
 
 /**
@@ -395,6 +391,102 @@ public class BaseProcessorTest {
   public void testLinkUnresolvedTypeWithSignature() throws Exception {
     failDoc("io.vertx.test.linkunresolvedtypewithsignature");
   }
+
+  @Test
+  public void testLanguagePostProcessor() throws Exception {
+
+    // Java
+    Compiler<TestGenProcessor> compiler = buildCompiler(new TestGenProcessor(),
+        "io.vertx.test.postprocessors.language");
+    compiler.assertCompile();
+    String content = compiler.processor.getDoc("io.vertx.test.postprocessors.language");
+    String processed = compiler.processor.applyPostProcessors(content);
+
+    assertThat(processed, containsString("This is only displayed for java."));
+    assertThat(processed, not(containsString("This is only displayed for javascript and ruby.")));
+    assertThat(processed, not(containsString("----")));
+    assertThat(processed, not(containsString("[language")));
+
+
+    // fake-JavaScript
+    compiler = buildCompiler(new TestGenProcessor() {
+                               @Override
+                               protected String getName() {
+                                 return "javascript";
+                               }
+                             },
+        "io.vertx.test.postprocessors.language");
+    compiler.assertCompile();
+    content = compiler.processor.getDoc("io.vertx.test.postprocessors.language");
+    processed = compiler.processor.applyPostProcessors(content);
+    assertThat(processed, not(containsString("This is only displayed for java.")));
+    assertThat(processed, containsString("This is only displayed for javascript and ruby."));
+
+    // fake-groovy
+    compiler = buildCompiler(new TestGenProcessor() {
+                               @Override
+                               protected String getName() {
+                                 return "groovy";
+                               }
+                             },
+        "io.vertx.test.postprocessors.language");
+    compiler.assertCompile();
+    content = compiler.processor.getDoc("io.vertx.test.postprocessors.language");
+    processed = compiler.processor.applyPostProcessors(content);
+    assertThat(processed, not(containsString("This is only displayed for java.")));
+    assertThat(processed, not(containsString("This is only displayed for javascript and ruby.")));
+  }
+
+  @Test
+  public void testMissingPostProcessor() throws Exception {
+    Compiler<TestGenProcessor> compiler = buildCompiler(new TestGenProcessor(),
+        "io.vertx.test.postprocessors.missing");
+    compiler.assertCompile();
+    String content = compiler.processor.getDoc("io.vertx.test.postprocessors.missing");
+    String processed = compiler.processor.applyPostProcessors(content);
+
+    assertThat(processed, containsString("This should be included."));
+    assertThat(processed, containsString("[missing]"));
+    assertThat(processed, containsString("----"));
+  }
+
+  @Test
+  public void testCodeBlocks() throws Exception {
+    // Code blocks must not be touched by pre-processors.
+    Compiler<TestGenProcessor> compiler = buildCompiler(new TestGenProcessor(),
+        "io.vertx.test.postprocessors.code");
+    compiler.assertCompile();
+    String content = compiler.processor.getDoc("io.vertx.test.postprocessors.code");
+    String processed = compiler.processor.applyPostProcessors(content);
+
+    assertThat(processed, containsString("[source,java]"));
+    assertThat(processed, containsString("[source]"));
+    assertThat(processed, containsString("----"));
+    assertThat(processed, containsString("System.out.println(\"Hello\");"));
+    assertThat(processed, containsString("System.out.println(\"Bye\");"));
+  }
+
+  @Test
+  public void testLinksInPostProcessedContent() throws Exception {
+    Compiler<TestGenProcessor> compiler = buildCompiler(new TestGenProcessor(),
+        "io.vertx.test.postprocessors.links");
+    compiler.assertCompile();
+    compiler.processor.registerPostProcessor(new PostProcessor() {
+      @Override
+      public String getName() {
+        return "test";
+      }
+
+      @Override
+      public String process(BaseProcessor processor, String content, String... args) {
+        return content;
+      }
+    });
+    String content = compiler.processor.getDoc("io.vertx.test.postprocessors.links");
+    String processed = compiler.processor.applyPostProcessors(content);
+    assertThat(processed, containsString("`link:type[BaseProcessor]`"));
+  }
+
 
   private Map<String, String> failDoc(String pkg) throws Exception {
     Compiler<TestGenProcessor> compiler = buildCompiler(new TestGenProcessor(), pkg);

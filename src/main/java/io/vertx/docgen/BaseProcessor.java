@@ -34,6 +34,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
   protected Types typeUtils;
   protected Elements elementUtils;
   protected Helper helper;
+  protected Set<PostProcessor> postProcessors = new LinkedHashSet<>();
   Map<String, String> failures = new HashMap<>();
 
   @Override
@@ -51,6 +52,25 @@ public abstract class BaseProcessor extends AbstractProcessor {
     return Collections.singleton(Document.class.getName());
   }
 
+  public synchronized BaseProcessor registerPostProcessor(PostProcessor postProcessor) {
+    if (getPostProcessor(postProcessor.getName()) != null) {
+      throw new IllegalArgumentException("Post-processor with name '" + postProcessor.getName() + "' is already " +
+          "registered.");
+    }
+    postProcessors.add(postProcessor);
+    return this;
+  }
+
+  public synchronized PostProcessor getPostProcessor(String name) {
+    for (PostProcessor pp : postProcessors) {
+      if (pp.getName().equalsIgnoreCase(name)) {
+        return pp;
+      }
+    }
+    return null;
+  }
+
+
   @Override
   public synchronized void init(ProcessingEnvironment processingEnv) {
     super.init(processingEnv);
@@ -58,6 +78,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
     typeUtils = processingEnv.getTypeUtils();
     elementUtils = processingEnv.getElementUtils();
     helper = new Helper(processingEnv);
+    registerPostProcessor(new LanguageFilterPostProcessor());
   }
 
   private String render(List<? extends DocTree> trees) {
@@ -391,6 +412,9 @@ public abstract class BaseProcessor extends AbstractProcessor {
   }
 
   protected void write(PackageElement docElt, String content) {
+
+    String processed = applyPostProcessors(content);
+
     String outputOpt = processingEnv.getOptions().get("docgen.output");
     if (outputOpt != null) {
       outputOpt = outputOpt.replace("$lang", getName());
@@ -408,12 +432,51 @@ public abstract class BaseProcessor extends AbstractProcessor {
         ensureDir(docElt, dir);
         File file = new File(dir, relativeName);
         try (FileWriter writer = new FileWriter(file)) {
-          writer.write(content);
+          writer.write(processed);
         }
       } catch (IOException e) {
         e.printStackTrace();
       }
     }
+  }
+
+  /**
+   * Apply post-processors.
+   *
+   * @param content the (asciidoc) content
+   * @return the content after post-processing.
+   */
+  protected String applyPostProcessors(String content) {
+    final List<String> lines = Arrays.asList(content.split("\r?\n"));
+    StringBuilder processed = new StringBuilder();
+    Iterator<String> iterator = lines.iterator();
+    while (iterator.hasNext()) {
+      String line = iterator.next().trim();
+      if (!PostProcessor.isBlockDeclaration(line)) {
+        processed.append(line);
+        if (iterator.hasNext()) {
+          processed.append("\n");
+        }
+      } else {
+        String name = PostProcessor.getProcessorName(line);
+        String[] attributes = PostProcessor.getProcessorAttributes(line);
+        PostProcessor postProcessor = getPostProcessor(name);
+        if (postProcessor == null) {
+          processed.append(line);
+          if (iterator.hasNext()) {
+            processed.append("\n");
+          }
+        } else {
+          // Extract content.
+          String block = PostProcessor.getBlockContent(iterator);
+          processed.append(postProcessor.process(this, block, attributes));
+          if (iterator.hasNext()) {
+            processed.append("\n");
+          }
+        }
+      }
+    }
+    return processed.toString();
   }
 
   /**

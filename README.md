@@ -60,6 +60,34 @@ The `$lang` token is replaced by the processed language in:
 
 The `\$lang` escapes to `$lang`.
 
+### Language-based content
+
+You can decided that some content is only applicable for a set of languages. This is doable using:
+
+```
+[language, java]
+----
+This is only for java
+----
+```
+
+or 
+
+```
+[language, ruby, groovy]
+----
+This is only for ruby and groovy.
+----
+```
+
+If the block is only on one line the following syntax is accepted:
+
+```
+[language, ruby]
+This is only for ruby
+
+```
+
 ### Referencing program elements
 
 The `{@link }` Javadoc tag creates a link to the Javadoc of a program element when the target is
