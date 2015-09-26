@@ -42,10 +42,14 @@ public interface PostProcessor {
     StringBuilder content = new StringBuilder();
     boolean startOfBlock = false;
     boolean endOfBlock = false;
-    while (iterator.hasNext() && ! endOfBlock) {
+    while (iterator.hasNext() && !endOfBlock) {
       String line = iterator.next().trim();
       if (line.equals("----") && !startOfBlock) {
         startOfBlock = true;
+      } else if (line.equals("\\----") && startOfBlock) {
+        // Escaped nested block. If yhe content is using a nested block such as [source], it must "escape" it with
+        // \---- instead of ----.
+        content.append("----").append("\n");
       } else if (line.equals("----") && startOfBlock) {
         endOfBlock = true;
       } else if (!line.equals("----") && !startOfBlock) {

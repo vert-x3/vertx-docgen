@@ -467,6 +467,20 @@ public class BaseProcessorTest {
   }
 
   @Test
+  public void testNestedBlocks() throws Exception {
+    Compiler<TestGenProcessor> compiler = buildCompiler(new TestGenProcessor(),
+        "io.vertx.test.postprocessors.nested");
+    compiler.assertCompile();
+    String content = compiler.processor.getDoc("io.vertx.test.postprocessors.nested");
+    String processed = compiler.processor.applyPostProcessors(content);
+
+    assertThat(processed, containsString("[source,java]"));
+    assertThat(processed, containsString("----"));
+    assertThat(processed, not(containsString("\\----")));
+    assertThat(processed, containsString("System.out.println(\"Hello\");"));
+  }
+
+  @Test
   public void testLinksInPostProcessedContent() throws Exception {
     Compiler<TestGenProcessor> compiler = buildCompiler(new TestGenProcessor(),
         "io.vertx.test.postprocessors.links");

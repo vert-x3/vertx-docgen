@@ -85,7 +85,20 @@ If the block is only on one line the following syntax is accepted:
 ```
 [language, ruby]
 This is only for ruby
+```
 
+If the block contains a "sub-block" such as code, the `----` must be prepended by a `\`:
+
+```
+[language, java]
+----
+
+[source]
+\----
+System.out.println("Hello");
+\----
+
+----
 ```
 
 ### Referencing program elements

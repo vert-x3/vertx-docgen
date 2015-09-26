@@ -76,4 +76,26 @@ public class PostProcessorTest {
     assertThat(PostProcessor.getBlockContent(lines.iterator()), not(containsString("----")));
   }
 
+  @Test
+  public void testExtractionWithNestedBlocks() {
+    List<String> lines = Arrays.asList(
+        "----",
+        "line 1",
+        "line 2",
+        "[source]",
+        "\\----",
+        "some source code",
+        "\\----",
+        "after",
+        "----",
+        "line 3"
+    );
+    assertThat(PostProcessor.getBlockContent(lines.iterator()), containsString("line 1"));
+    assertThat(PostProcessor.getBlockContent(lines.iterator()), containsString("line 2"));
+    assertThat(PostProcessor.getBlockContent(lines.iterator()), containsString("[source]"));
+    assertThat(PostProcessor.getBlockContent(lines.iterator()), containsString("some source code"));
+    assertThat(PostProcessor.getBlockContent(lines.iterator()), containsString("after"));
+    assertThat(PostProcessor.getBlockContent(lines.iterator()), not(containsString("line 3")));
+  }
+
 }
