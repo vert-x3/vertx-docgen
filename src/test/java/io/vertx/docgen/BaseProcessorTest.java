@@ -501,6 +501,25 @@ public class BaseProcessorTest {
     assertThat(processed, containsString("`link:type[BaseProcessor]`"));
   }
 
+  @Test
+  public void testVariableSubstitution() throws Exception {
+    Compiler<TestGenProcessor> compiler = buildCompiler(new TestGenProcessor(),
+        "io.vertx.test.variables");
+    compiler.setOption("foo", "hello");
+    compiler.setOption("bar", "not-used");
+    compiler.setOption("baz", "vert.x");
+    compiler.assertCompile();
+
+    String content = compiler.processor.getDoc("io.vertx.test.variables");
+    String processed = compiler.processor.applyVariableSubstitution(content);
+
+    assertThat(processed, containsString("hello"));
+    assertThat(processed, containsString("${missing}"));
+    assertThat(processed, containsString("vert.x"));
+    assertThat(processed, containsString("${}"));
+    assertThat(processed, not(containsString("not")));
+  }
+
 
   private Map<String, String> failDoc(String pkg) throws Exception {
     Compiler<TestGenProcessor> compiler = buildCompiler(new TestGenProcessor(), pkg);

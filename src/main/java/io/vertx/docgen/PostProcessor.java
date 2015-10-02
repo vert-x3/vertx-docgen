@@ -47,7 +47,7 @@ public interface PostProcessor {
       if (line.equals("----") && !startOfBlock) {
         startOfBlock = true;
       } else if (line.equals("\\----") && startOfBlock) {
-        // Escaped nested block. If yhe content is using a nested block such as [source], it must "escape" it with
+        // Escaped nested block. If the content is using a nested block such as [source], it must "escape" it with
         // \---- instead of ----.
         content.append("----").append("\n");
       } else if (line.equals("----") && startOfBlock) {

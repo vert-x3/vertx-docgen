@@ -413,11 +413,13 @@ public abstract class BaseProcessor extends AbstractProcessor {
 
   protected void write(PackageElement docElt, String content) {
 
-    String processed = applyPostProcessors(content);
+    String processed = applyVariableSubstitution(content);
+    processed = applyPostProcessors(processed);
 
     String outputOpt = processingEnv.getOptions().get("docgen.output");
     if (outputOpt != null) {
       outputOpt = outputOpt.replace("$lang", getName());
+
       try {
         Document doc = docElt.getAnnotation(Document.class);
         String relativeName = doc.fileName();
@@ -542,5 +544,18 @@ public abstract class BaseProcessor extends AbstractProcessor {
     } else if (!dir.mkdirs()) {
       throw new DocGenException(elt, "could not create dir " + dir.getAbsolutePath());
     }
+  }
+
+  /**
+   * Replace `@{var} by the variable value passed to the annotation processor.
+   *
+   * @param content the content
+   * @return the content with variable values
+   */
+  public String applyVariableSubstitution(String content) {
+    for (Map.Entry<String, String> entry : processingEnv.getOptions().entrySet()) {
+      content = content.replace("${" + entry.getKey() + "}", entry.getValue());
+    }
+    return content;
   }
 }
