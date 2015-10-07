@@ -520,6 +520,14 @@ public class BaseProcessorTest {
     assertThat(processed, not(containsString("not")));
   }
 
+  @Test
+  public void testUnknownTag() throws Exception {
+    assertEquals("" +
+        "before\n" +
+        "@sometag should not be stripped\n" +
+        "after", assertDoc("io.vertx.test.unknowntag"));
+  }
+
 
   private Map<String, String> failDoc(String pkg) throws Exception {
     Compiler<TestGenProcessor> compiler = buildCompiler(new TestGenProcessor(), pkg);

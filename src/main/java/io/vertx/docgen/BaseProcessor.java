@@ -249,6 +249,12 @@ public abstract class BaseProcessor extends AbstractProcessor {
       }
 
       @Override
+      public Void visitUnknownBlockTag(UnknownBlockTagTree node, Void v) {
+        writer.append("@").append(node.getTagName()).append(" ");
+        return super.visitUnknownBlockTag(node, v);
+      }
+
+      @Override
       public Void visitDocComment(DocCommentTree node, Void v) {
         v = scan(node.getFirstSentence(), v);
         List<? extends DocTree> body = node.getBody();
@@ -256,6 +262,11 @@ public abstract class BaseProcessor extends AbstractProcessor {
           writer.append("\n\n");
           writer.resetParagraph();
           v = scan(body, v);
+        }
+        List<? extends DocTree> blockTags = node.getBlockTags();
+        if (blockTags.size() > 0) {
+          writer.append("\n");
+          v = scan(blockTags, v);
         }
         return v;
       }
