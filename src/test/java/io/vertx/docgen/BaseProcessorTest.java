@@ -48,6 +48,11 @@ public class BaseProcessorTest {
   }
 
   @Test
+  public void testLinkToAnnotation() throws Exception {
+    assertEquals("`link:annotation[@TheAnnotation]`", assertDoc("io.vertx.test.linktoannotation"));
+  }
+
+  @Test
   public void testLinkToEnum() throws Exception {
     assertEquals("`link:enum[TheEnum]`", assertDoc("io.vertx.test.linktoenum"));
   }

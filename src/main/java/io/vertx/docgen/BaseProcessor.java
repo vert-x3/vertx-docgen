@@ -217,6 +217,9 @@ public abstract class BaseProcessor extends AbstractProcessor {
         (elt.getKind() == ElementKind.METHOD || elt.getKind() == ElementKind.FIELD)) {
       label = elt.getEnclosingElement().getSimpleName() + "." + label;
     }
+    if (elt.getKind() == ElementKind.ANNOTATION_TYPE) {
+      label = "@" +label;
+    }
     return label;
   }
 
@@ -378,6 +381,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
           switch (resolvedElt.getKind()) {
             case CLASS:
             case INTERFACE:
+            case ANNOTATION_TYPE:
             case ENUM: {
               TypeElement typeElt = (TypeElement) resolvedElt;
               link = resolveTypeLink(typeElt, resolveCoordinate(typeElt));

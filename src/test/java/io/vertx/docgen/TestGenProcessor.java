@@ -23,6 +23,8 @@ public class TestGenProcessor extends JavaDocGenProcessor {
   @Override
   protected String resolveTypeLink(TypeElement elt, Coordinate coordinate) {
     switch (elt.getKind()) {
+      case ANNOTATION_TYPE:
+        return "annotation";
       case INTERFACE:
       case CLASS:
         return "type";
