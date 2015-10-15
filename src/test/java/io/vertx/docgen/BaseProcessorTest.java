@@ -101,7 +101,8 @@ public class BaseProcessorTest {
         "`link:method[m14]`\n" +
         "`link:method[m15]`\n" +
         "`link:method[m16]`\n" +
-        "`link:method[m17]`" +
+        "`link:method[m17]`\n" +
+        "`link:method[m18]`" +
         "", assertDoc("io.vertx.test.linktomethod"));
   }
 

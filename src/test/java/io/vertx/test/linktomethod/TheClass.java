@@ -1,5 +1,7 @@
 package io.vertx.test.linktomethod;
 
+import io.vertx.docgen.FooAnnotation;
+
 import java.util.List;
 
 /**
@@ -24,5 +26,6 @@ public class TheClass {
   public void m15(String[] arg) {}
   public void m16(String[][] arg) {}
   public <T> void m17(T[] arg) {}
+  public void m18(@FooAnnotation Object arg) {}
 
 }

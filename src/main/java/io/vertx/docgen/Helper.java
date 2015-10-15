@@ -8,13 +8,20 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.TypeParameterElement;
+import javax.lang.model.type.ArrayType;
+import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.ExecutableType;
+import javax.lang.model.type.PrimitiveType;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.TypeVariable;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.Arrays;
+import java.util.List;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -116,7 +123,7 @@ class Helper {
         TypeMirror tm2  = exeElt.asType();
         ExecutableType tm3  = (ExecutableType) typeUtils.erasure(tm2);
         for (int j = 0;j < parameterSignature.length;j++) {
-          String t1 = tm3.getParameterTypes().get(j).toString();
+          String t1 = toString(tm3.getParameterTypes().get(j));
           String t2 = parameterSignature[j];
           if (t2.indexOf('.') == -1) {
             t1 = t1.substring(t1.lastIndexOf('.') + 1);
@@ -182,6 +189,73 @@ class Helper {
       return source.toString();
     } catch (IOException e) {
       throw new DocGenException(elt, "Could not read source code of element " + elt);
+    }
+  }
+
+  /**
+   * Compute the string representation of a type mirror.
+   *
+   * @param mirror the type mirror
+   * @return the string representation
+   */
+  static String toString(TypeMirror mirror) {
+    StringBuilder buffer = new StringBuilder();
+    toString(mirror, buffer);
+    return buffer.toString();
+  }
+
+  /**
+   * Compute the string representation of a type mirror.
+   *
+   * @param mirror the type mirror
+   * @param buffer the buffer appended with the string representation
+   */
+  static void toString(TypeMirror mirror, StringBuilder buffer) {
+    if (mirror instanceof DeclaredType) {
+      DeclaredType dt = (DeclaredType) mirror;
+      TypeElement elt = (TypeElement) dt.asElement();
+      buffer.append(elt.getQualifiedName().toString());
+      List<? extends TypeMirror> args = dt.getTypeArguments();
+      if (args.size() > 0) {
+        buffer.append("<");
+        for (int i = 0;i < args.size();i++) {
+          if (i > 0) {
+            buffer.append(",");
+          }
+          toString(args.get(i), buffer);
+        }
+        buffer.append(">");
+      }
+    } else if (mirror instanceof PrimitiveType) {
+      PrimitiveType pm = (PrimitiveType) mirror;
+      buffer.append(pm.getKind().name().toLowerCase());
+    } else if (mirror instanceof javax.lang.model.type.WildcardType) {
+      javax.lang.model.type.WildcardType wt = (javax.lang.model.type.WildcardType) mirror;
+      buffer.append("?");
+      if (wt.getSuperBound() != null) {
+        buffer.append(" super ");
+        toString(wt.getSuperBound(), buffer);
+      } else if (wt.getExtendsBound() != null) {
+        buffer.append(" extends ");
+        toString(wt.getExtendsBound(), buffer);
+      }
+    } else if (mirror instanceof javax.lang.model.type.TypeVariable) {
+      javax.lang.model.type.TypeVariable tv = (TypeVariable) mirror;
+      TypeParameterElement elt = (TypeParameterElement) tv.asElement();
+      buffer.append(elt.getSimpleName().toString());
+      if (tv.getUpperBound() != null && !tv.getUpperBound().toString().equals("java.lang.Object")) {
+        buffer.append(" extends ");
+        toString(tv.getUpperBound(), buffer);
+      } else if (tv.getLowerBound() != null && tv.getLowerBound().getKind() != TypeKind.NULL) {
+        buffer.append(" super ");
+        toString(tv.getUpperBound(), buffer);
+      }
+    } else if (mirror instanceof javax.lang.model.type.ArrayType) {
+      javax.lang.model.type.ArrayType at = (ArrayType) mirror;
+      toString(at.getComponentType(), buffer);
+      buffer.append("[]");
+    } else {
+      throw new UnsupportedOperationException("todo " + mirror + " " + mirror.getKind());
     }
   }
 }

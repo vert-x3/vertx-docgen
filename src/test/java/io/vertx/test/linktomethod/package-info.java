@@ -21,6 +21,7 @@
  *{@link io.vertx.test.linktomethod.TheClass#m15(java.lang.String[])}
  *{@link io.vertx.test.linktomethod.TheClass#m16(java.lang.String[][])}
  *{@link io.vertx.test.linktomethod.TheClass#m17(java.lang.Object[])}
+ *{@link io.vertx.test.linktomethod.TheClass#m18(java.lang.Object)}
  */
 @Document
 package io.vertx.test.linktomethod;
