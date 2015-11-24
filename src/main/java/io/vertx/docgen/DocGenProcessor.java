@@ -78,6 +78,13 @@ public class DocGenProcessor extends BaseProcessor {
   }
 
   @Override
+  protected String resolveRelativeFileName(PackageElement docElt) {
+    String relativeFileName = super.resolveRelativeFileName(docElt);
+    relativeFileName = current.resolveRelativeFileName(docElt, relativeFileName);
+    return relativeFileName;
+  }
+
+  @Override
   protected void handleGen(PackageElement docElt) {
     for (DocGenerator generator : generators) {
       current = generator;

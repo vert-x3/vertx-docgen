@@ -3,6 +3,7 @@ package io.vertx.docgen;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 
@@ -24,6 +25,18 @@ public interface DocGenerator {
    * @return the generator name
    */
   String getName();
+
+  /**
+   * Resolve the relative file name of a document, the default implementation returns the {@literal relativeFileName}
+   * parameter.
+   *
+   * @param docElt the doc element
+   * @param relativeFileName the relative file name original value
+   * @return the relative file name
+   */
+  default String resolveRelativeFileName(PackageElement docElt, String relativeFileName) {
+    return relativeFileName;
+  }
 
   /**
    * Render the source code of the {@code elt} argument.

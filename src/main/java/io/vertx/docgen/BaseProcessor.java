@@ -426,6 +426,21 @@ public abstract class BaseProcessor extends AbstractProcessor {
     stack.removeLast();
   }
 
+  /**
+   * Return the relative file name of a document.
+   *
+   * @param docElt the doc elt
+   * @return the relative file name
+   */
+  protected String resolveRelativeFileName(PackageElement docElt) {
+    Document doc = docElt.getAnnotation(Document.class);
+    String relativeName = doc.fileName();
+    if (relativeName.isEmpty()) {
+      relativeName = docElt.getQualifiedName() + getExtension();
+    }
+    return relativeName;
+  }
+
   protected void write(PackageElement docElt, String content) {
 
     String processed = applyVariableSubstitution(content);
@@ -434,13 +449,8 @@ public abstract class BaseProcessor extends AbstractProcessor {
     String outputOpt = processingEnv.getOptions().get("docgen.output");
     if (outputOpt != null) {
       outputOpt = outputOpt.replace("$lang", getName());
-
+      String relativeName = resolveRelativeFileName(docElt);
       try {
-        Document doc = docElt.getAnnotation(Document.class);
-        String relativeName = doc.fileName();
-        if (relativeName.isEmpty()) {
-          relativeName = docElt.getQualifiedName() + getExtension();
-        }
         File dir = new File(outputOpt);
         for (int i = relativeName.indexOf('/'); i != -1; i = relativeName.indexOf('/', i + 1)) {
           dir = new File(dir, relativeName.substring(0, i));
