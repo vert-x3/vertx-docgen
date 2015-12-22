@@ -35,7 +35,14 @@ function toExecutableLink(elt, name) {
     if (i > 0) {
       anchor += '-';
     }
-    anchor += parameterTypes.get(i).toString();
+    var typeOfParameter = parameterTypes.get(i);
+    // If the parameter is annotated, we should ignore the annotation to generate the right link.
+    // (annotations are not part of the javadoc links).
+    if (typeOfParameter instanceof com.sun.tools.javac.code.Type$AnnotatedType) {
+      anchor += typeOfParameter.unannotatedType().toString();
+    } else {
+      anchor += typeOfParameter.toString();
+    }
   }
   anchor += '-';
   return link + anchor;

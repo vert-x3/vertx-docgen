@@ -5,6 +5,7 @@ import org.junit.Test;
 import java.io.File;
 import java.nio.file.Files;
 import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.Assert.*;
 
@@ -25,6 +26,22 @@ public class DocGenProcessorTest {
       File file = new File(dir, pkg + ".adoc");
       assertTrue(file.exists());
       assertTrue(file.isFile());
+    }
+  }
+
+  @Test
+  public void testLinkGenerationWithAnnotation() throws Exception {
+    String pkg = "io.vertx.test.linktomethod";
+    Compiler<DocGenProcessor> compiler = BaseProcessorTest.buildCompiler(new DocGenProcessor(), pkg);
+    File dir = Files.createTempDirectory("docgen").toFile();
+    dir.deleteOnExit();
+    compiler.setOption("docgen.output", dir.getAbsolutePath());
+    compiler.assertCompile();
+    File file = new File(dir, pkg + ".adoc");
+    List<String> lines = Files.readAllLines(file.toPath());
+    for (String line : lines) {
+      // The :: is used when the annotated type is used.
+      assertFalse(line.contains("::"));
     }
   }
 

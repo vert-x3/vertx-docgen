@@ -1,11 +1,6 @@
 package io.vertx.docgen;
 
-import com.sun.source.tree.BlockTree;
-import com.sun.source.tree.CompilationUnitTree;
-import com.sun.source.tree.LineMap;
-import com.sun.source.tree.MethodTree;
-import com.sun.source.tree.StatementTree;
-import com.sun.source.util.TreePath;
+import com.sun.tools.javac.code.Type;
 
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.PackageElement;
@@ -14,9 +9,7 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.TypeMirror;
 import java.io.StringWriter;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Scanner;
 
 /**
  * Processor specialized for Java.
@@ -57,14 +50,20 @@ public class JavaDocGenProcessor extends BaseProcessor {
     String link = resolveTypeLink(typeElt, null);
     StringBuilder anchor = new StringBuilder("#");
     anchor.append(name).append('-');
-    TypeMirror type  = elt.asType();
-    ExecutableType methodType  = (ExecutableType) processingEnv.getTypeUtils().erasure(type);
+    TypeMirror type = elt.asType();
+    ExecutableType methodType = (ExecutableType) processingEnv.getTypeUtils().erasure(type);
     List<? extends TypeMirror> parameterTypes = methodType.getParameterTypes();
-    for (int i = 0;i < parameterTypes.size();i++) {
+    for (int i = 0; i < parameterTypes.size(); i++) {
       if (i > 0) {
         anchor.append('-');
       }
-      anchor.append(parameterTypes.get(i));
+      // We need to check whether or not the parameter is annotated. In this case, we must use the unannotated type.
+      TypeMirror typeOfParameter = parameterTypes.get(i);
+      if (typeOfParameter instanceof Type && ((Type) typeOfParameter).isAnnotated()) {
+        anchor.append(((Type) typeOfParameter).unannotatedType().toString());
+      } else {
+        anchor.append(typeOfParameter.toString());
+      }
     }
     anchor.append('-');
     return link + anchor;
