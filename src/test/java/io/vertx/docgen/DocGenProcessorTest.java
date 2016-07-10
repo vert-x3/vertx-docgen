@@ -18,7 +18,7 @@ public class DocGenProcessorTest {
   public void testGeneration() throws Exception {
     for (String pkg : Arrays.asList("io.vertx.test.linktoclass",
         "io.vertx.test.linktoconstructor", "io.vertx.test.linktomethod", "io.vertx.test.linktofield")) {
-      Compiler<DocGenProcessor> compiler = BaseProcessorTest.buildCompiler(new DocGenProcessor(), pkg);
+      Compiler<DocGenProcessor> compiler = BaseProcessorTest.buildCompiler(new DocGenProcessor(new JavaDocGenerator()), pkg);
       File dir = Files.createTempDirectory("docgen").toFile();
       dir.deleteOnExit();
       compiler.setOption("docgen.output", dir.getAbsolutePath());
@@ -32,7 +32,7 @@ public class DocGenProcessorTest {
   @Test
   public void testLinkGenerationWithAnnotation() throws Exception {
     String pkg = "io.vertx.test.linktomethod";
-    Compiler<DocGenProcessor> compiler = BaseProcessorTest.buildCompiler(new DocGenProcessor(), pkg);
+    Compiler<DocGenProcessor> compiler = BaseProcessorTest.buildCompiler(new DocGenProcessor(new JavaDocGenerator()), pkg);
     File dir = Files.createTempDirectory("docgen").toFile();
     dir.deleteOnExit();
     compiler.setOption("docgen.output", dir.getAbsolutePath());
@@ -47,7 +47,7 @@ public class DocGenProcessorTest {
 
   @Test
   public void testFileName() throws Exception {
-    Compiler<DocGenProcessor> compiler = BaseProcessorTest.buildCompiler(new DocGenProcessor(), "io.vertx.test.filename");
+    Compiler<DocGenProcessor> compiler = BaseProcessorTest.buildCompiler(new DocGenProcessor(new JavaDocGenerator()), "io.vertx.test.filename");
     File dir = Files.createTempDirectory("docgen").toFile();
     dir.deleteOnExit();
     compiler.setOption("docgen.output", dir.getAbsolutePath());
@@ -65,7 +65,7 @@ public class DocGenProcessorTest {
   public void testExtension() throws Exception {
     for (String pkg : Arrays.asList("io.vertx.test.linktoclass",
         "io.vertx.test.linktoconstructor", "io.vertx.test.linktomethod", "io.vertx.test.linktofield")) {
-      Compiler<DocGenProcessor> compiler = BaseProcessorTest.buildCompiler(new DocGenProcessor(), pkg);
+      Compiler<DocGenProcessor> compiler = BaseProcessorTest.buildCompiler(new DocGenProcessor(new JavaDocGenerator()), pkg);
       File dir = Files.createTempDirectory("docgen").toFile();
       dir.deleteOnExit();
       compiler.setOption("docgen.output", dir.getAbsolutePath());
@@ -81,7 +81,7 @@ public class DocGenProcessorTest {
   public void testOutputInterpolation() throws Exception {
     for (String pkg : Arrays.asList("io.vertx.test.linktoclass",
         "io.vertx.test.linktoconstructor", "io.vertx.test.linktomethod", "io.vertx.test.linktofield")) {
-      Compiler<DocGenProcessor> compiler = BaseProcessorTest.buildCompiler(new DocGenProcessor(), pkg);
+      Compiler<DocGenProcessor> compiler = BaseProcessorTest.buildCompiler(new DocGenProcessor(new JavaDocGenerator()), pkg);
       File dir = Files.createTempDirectory("docgen").toFile();
       dir.deleteOnExit();
       compiler.setOption("docgen.output", new File(dir, "$lang").getAbsolutePath());

@@ -17,40 +17,20 @@ public class LanguageFilterPostProcessorTest {
   @Test
   public void testThatMatchingLanguagesAreNotFilteredOut() {
     String content = "This is something only for java";
-    String result = postProcessor.process(new JavaDocGenProcessor() {
-      @Override
-      protected String getName() {
-        return "java";
-      }
-    }, content, "java");
+    String result = postProcessor.process("java", content, "java");
     assertThat(result, containsString(content));
 
-    result = postProcessor.process(new JavaDocGenProcessor() {
-      @Override
-      protected String getName() {
-        return "java";
-      }
-    }, content, "java", "javascript", "ruby");
+    result = postProcessor.process("java", content, "java", "javascript", "ruby");
     assertThat(result, containsString(content));
   }
 
   @Test
   public void testThatNotMatchingLanguagesAreFilteredOut() {
     String content = "This is something only for javascript and ruby";
-    String result = postProcessor.process(new JavaDocGenProcessor() {
-      @Override
-      protected String getName() {
-        return "java";
-      }
-    }, content, "java");
+    String result = postProcessor.process("java", content, "java");
     assertThat(result, containsString(content));
 
-    result = postProcessor.process(new JavaDocGenProcessor() {
-      @Override
-      protected String getName() {
-        return "java";
-      }
-    }, content, "javascript", "ruby");
+    result = postProcessor.process("java", content, "javascript", "ruby");
     assertThat(result, not(containsString(content)));
     assertThat(result, equalTo(PostProcessor.EMPTY_CONTENT));
   }
@@ -58,24 +38,14 @@ public class LanguageFilterPostProcessorTest {
   @Test
   public void testWhenContentIsEmpty() {
     String content = "";
-    String result = postProcessor.process(new JavaDocGenProcessor() {
-      @Override
-      protected String getName() {
-        return "java";
-      }
-    }, content, "java");
+    String result = postProcessor.process("java", content, "java");
     assertThat(result, containsString(content));
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void testWithNoArgs() {
     String content = "";
-    String result = postProcessor.process(new JavaDocGenProcessor() {
-      @Override
-      protected String getName() {
-        return "java";
-      }
-    }, content);
+    String result = postProcessor.process("java", content);
     assertThat(result, containsString(content));
   }
 

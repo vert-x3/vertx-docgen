@@ -3,7 +3,6 @@ package io.vertx.docgen;
 import com.sun.source.doctree.*;
 import com.sun.source.doctree.ErroneousTree;
 import com.sun.source.doctree.LiteralTree;
-import com.sun.source.tree.*;
 import com.sun.source.util.DocTreeScanner;
 import com.sun.source.util.DocTrees;
 import com.sun.source.util.TreePath;
@@ -14,8 +13,6 @@ import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
-import javax.lang.model.util.Elements;
-import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 import java.io.*;
@@ -31,8 +28,6 @@ import java.util.regex.Matcher;
 public abstract class BaseProcessor extends AbstractProcessor {
 
   protected DocTrees docTrees;
-  protected Types typeUtils;
-  protected Elements elementUtils;
   protected Helper helper;
   protected Set<PostProcessor> postProcessors = new LinkedHashSet<>();
   Map<String, String> failures = new HashMap<>();
@@ -75,8 +70,6 @@ public abstract class BaseProcessor extends AbstractProcessor {
   public synchronized void init(ProcessingEnvironment processingEnv) {
     super.init(processingEnv);
     docTrees = DocTrees.instance(processingEnv);
-    typeUtils = processingEnv.getTypeUtils();
-    elementUtils = processingEnv.getElementUtils();
     helper = new Helper(processingEnv);
     registerPostProcessor(new LanguageFilterPostProcessor());
   }
@@ -121,7 +114,17 @@ public abstract class BaseProcessor extends AbstractProcessor {
     return false;
   }
 
-  protected abstract void handleGen(PackageElement pkgElt);
+  protected abstract Iterable<DocGenerator> generators();
+
+  private final void handleGen(PackageElement pkgElt) {
+    for (DocGenerator generator : generators()) {
+      generator.init(processingEnv);
+      StringWriter buffer = new StringWriter();
+      process(generator, buffer, pkgElt);
+      String content = postProcess(generator.getName(), buffer.toString());
+      write(generator, pkgElt, content);
+    }
+  }
 
   /**
    * @return the extension obtained from processor option {@literal docgen.extension} defaults to {@literal .adoc}
@@ -192,16 +195,6 @@ public abstract class BaseProcessor extends AbstractProcessor {
     }
   }
 
-  protected abstract String resolveTypeLink(TypeElement elt, Coordinate coordinate);
-
-  protected abstract String resolveConstructorLink(ExecutableElement elt, Coordinate coordinate);
-
-  protected abstract String resolveMethodLink(ExecutableElement elt, Coordinate coordinate);
-
-  protected abstract String resolveFieldLink(VariableElement elt, Coordinate coordinate);
-
-  protected abstract String renderSource(ExecutableElement elt, String source);
-
   /**
    * Resolve a label for the specified element, this is used when a link to a program element
    * does not specify an explicit label.<p/>
@@ -211,7 +204,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
    * @param elt the elt to resolve a label for
    * @return the label
    */
-  protected String resolveLabel(Element elt) {
+  private String resolveLabel(DocGenerator generator, Element elt) {
     String label = elt.getSimpleName().toString();
     if (elt.getModifiers().contains(Modifier.STATIC) &&
         (elt.getKind() == ElementKind.METHOD || elt.getKind() == ElementKind.FIELD)) {
@@ -220,17 +213,12 @@ public abstract class BaseProcessor extends AbstractProcessor {
     if (elt.getKind() == ElementKind.ANNOTATION_TYPE) {
       label = "@" +label;
     }
-    return label;
+    return generator.resolveLabel(elt, label);
   }
-
-  /**
-   * @return the current generator name
-   */
-  protected abstract String getName();
 
   private final LinkedList<PackageElement> stack = new LinkedList<>();
 
-  protected final void process(Writer buffer, PackageElement pkgElt) {
+  protected final void process(DocGenerator generator, Writer buffer, PackageElement pkgElt) {
 
     for (PackageElement stackElt : stack) {
       if (pkgElt.getQualifiedName().equals(stackElt.getQualifiedName())) {
@@ -290,7 +278,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
             // \$lang
             writer.append("$lang");
           } else {
-            writer.append(getName());
+            writer.append(generator.getName());
           }
           prev = matcher.end();
         }
@@ -336,7 +324,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
         } else if (resolvedElt instanceof PackageElement) {
           PackageElement includedElt = (PackageElement) resolvedElt;
           if (includedElt.getAnnotation(Document.class) == null) {
-            process(writer, includedElt);
+            process(generator, writer, includedElt);
           } else {
             String link = resolveLinkToPackageDoc((PackageElement) resolvedElt);
             writer.append(link);
@@ -351,10 +339,12 @@ public abstract class BaseProcessor extends AbstractProcessor {
                 String fragment;
                 if (helper.hasToBeTranslated(resolvedElt)) {
                   // Invoke the custom renderer, this may should the translation to the expected language.
-                  fragment = renderSource((ExecutableElement) resolvedElt, source);
+                  fragment = generator.renderSource((ExecutableElement) resolvedElt, source);
                 } else {
                   // Do not call the custom rendering process, just use the default / java one.
-                  fragment = defaultRenderSource((ExecutableElement) resolvedElt, source);
+                  JavaDocGenerator javaGen = new JavaDocGenerator();
+                  javaGen.init(processingEnv);
+                  fragment = javaGen.renderSource((ExecutableElement) resolvedElt, source);
                 }
                 if (fragment != null) {
                   writer.literalMode();
@@ -384,26 +374,26 @@ public abstract class BaseProcessor extends AbstractProcessor {
             case ANNOTATION_TYPE:
             case ENUM: {
               TypeElement typeElt = (TypeElement) resolvedElt;
-              link = resolveTypeLink(typeElt, resolveCoordinate(typeElt));
+              link = generator.resolveTypeLink(typeElt, resolveCoordinate(typeElt));
               break;
             }
             case METHOD: {
               ExecutableElement methodElt = (ExecutableElement) resolvedElt;
               TypeElement typeElt = (TypeElement) methodElt.getEnclosingElement();
-              link = resolveMethodLink(methodElt, resolveCoordinate(typeElt));
+              link = generator.resolveMethodLink(methodElt, resolveCoordinate(typeElt));
               break;
             }
             case CONSTRUCTOR: {
               ExecutableElement constructorElt = (ExecutableElement) resolvedElt;
               TypeElement typeElt = (TypeElement) constructorElt.getEnclosingElement();
-              link = resolveConstructorLink(constructorElt, resolveCoordinate(typeElt));
+              link = generator.resolveConstructorLink(constructorElt, resolveCoordinate(typeElt));
               break;
             }
             case FIELD:
             case ENUM_CONSTANT: {
               VariableElement variableElt = (VariableElement) resolvedElt;
               TypeElement typeElt = (TypeElement) variableElt.getEnclosingElement();
-              link = resolveFieldLink(variableElt, resolveCoordinate(typeElt));
+              link = generator.resolveFieldLink(variableElt, resolveCoordinate(typeElt));
               break;
             }
             default:
@@ -411,7 +401,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
           }
           String label = render(node.getLabel()).trim();
           if (label.length() == 0) {
-            label = resolveLabel(resolvedElt);
+            label = resolveLabel(generator, resolvedElt);
           }
           if (link != null) {
             writer.append("`link:").append(link).append("[").append(label).append("]`");
@@ -432,24 +422,26 @@ public abstract class BaseProcessor extends AbstractProcessor {
    * @param docElt the doc elt
    * @return the relative file name
    */
-  protected String resolveRelativeFileName(PackageElement docElt) {
+  private String resolveRelativeFileName(DocGenerator generator, PackageElement docElt) {
     Document doc = docElt.getAnnotation(Document.class);
     String relativeName = doc.fileName();
     if (relativeName.isEmpty()) {
       relativeName = docElt.getQualifiedName() + getExtension();
     }
-    return relativeName;
+    return generator.resolveRelativeFileName(docElt, relativeName);
   }
 
-  protected void write(PackageElement docElt, String content) {
-
+  protected String postProcess(String name, String content) {
     String processed = applyVariableSubstitution(content);
-    processed = applyPostProcessors(processed);
+    processed = applyPostProcessors(name, processed);
+    return processed;
+  }
 
+  protected void write(DocGenerator generator, PackageElement docElt, String content) {
     String outputOpt = processingEnv.getOptions().get("docgen.output");
     if (outputOpt != null) {
-      outputOpt = outputOpt.replace("$lang", getName());
-      String relativeName = resolveRelativeFileName(docElt);
+      outputOpt = outputOpt.replace("$lang", generator.getName());
+      String relativeName = resolveRelativeFileName(generator, docElt);
       try {
         File dir = new File(outputOpt);
         for (int i = relativeName.indexOf('/'); i != -1; i = relativeName.indexOf('/', i + 1)) {
@@ -459,7 +451,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
         ensureDir(docElt, dir);
         File file = new File(dir, relativeName);
         try (FileWriter writer = new FileWriter(file)) {
-          writer.write(processed);
+          writer.write(content);
         }
       } catch (IOException e) {
         e.printStackTrace();
@@ -473,7 +465,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
    * @param content the (asciidoc) content
    * @return the content after post-processing.
    */
-  protected String applyPostProcessors(String content) {
+  protected String applyPostProcessors(String name2, String content) {
     final List<String> lines = Arrays.asList(content.split("\r?\n"));
     StringBuilder processed = new StringBuilder();
     Iterator<String> iterator = lines.iterator();
@@ -497,7 +489,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
         } else {
           // Extract content.
           String block = PostProcessor.getBlockContent(iterator);
-          processed.append(postProcessor.process(this, block, attributes));
+          processed.append(postProcessor.process(name2, block, attributes));
           if (iterator.hasNext()) {
             processed.append("\n");
           }
@@ -505,60 +497,6 @@ public abstract class BaseProcessor extends AbstractProcessor {
       }
     }
     return processed.toString();
-  }
-
-  /**
-   * Render the source fragment for the Java language. Java being the pivot language, we consider this method as the
-   * _default_ behavior. This method is final as it must not be overridden by any extension.
-   *
-   * @param elt    the element
-   * @param source the source
-   * @return the fragment
-   */
-  protected final String defaultRenderSource(ExecutableElement elt, String source) {
-    TreePath resolvedTP = docTrees.getPath(elt);
-    CompilationUnitTree unit = resolvedTP.getCompilationUnit();
-    MethodTree methodTree = (MethodTree) resolvedTP.getLeaf();
-    BlockTree blockTree = methodTree.getBody();
-    // Get block
-    List<? extends StatementTree> statements = blockTree.getStatements();
-    if (statements.size() > 0) {
-      int from = (int) docTrees.getSourcePositions().getStartPosition(unit, statements.get(0));
-      int to = (int) docTrees.getSourcePositions().getEndPosition(unit, statements.get(statements.size() - 1));
-      // Correct boundaries
-      while (from > 1 && source.charAt(from - 1) != '\n') {
-        from--;
-      }
-      while (to < source.length() && source.charAt(to) != '\n') {
-        to++;
-      }
-      String block = source.substring(from, to);
-      // Determine margin
-      int blockMargin = Integer.MAX_VALUE;
-      LineMap lineMap = unit.getLineMap();
-      for (StatementTree statement : statements) {
-        int statementStart = (int) docTrees.getSourcePositions().getStartPosition(unit, statement);
-        int lineStart = statementStart;
-        while (lineMap.getLineNumber(statementStart) == lineMap.getLineNumber(lineStart - 1)) {
-          lineStart--;
-        }
-        blockMargin = Math.min(blockMargin, statementStart - lineStart);
-      }
-      // Crop the fragment
-      StringBuilder fragment = new StringBuilder();
-      for (Iterator<String> sc = new Scanner(block).useDelimiter("\n"); sc.hasNext(); ) {
-        String line = sc.next();
-        int margin = Math.min(blockMargin, line.length());
-        line = line.substring(margin);
-        fragment.append(line);
-        if (sc.hasNext()) {
-          fragment.append('\n');
-        }
-      }
-      return fragment.toString();
-    } else {
-      return null;
-    }
   }
 
   private void ensureDir(PackageElement elt, File dir) {

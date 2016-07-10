@@ -187,7 +187,7 @@ public class BaseProcessorTest {
 
   @Test
   public void testLinkToPackage() throws Exception {
-    assertEquals("package[io.vertx.test.linktopackage.sub]", assertDoc("io.vertx.test.linktopackage"));
+    assertEquals("io.vertx.test.linktopackage.sub.adoc", assertDoc("io.vertx.test.linktopackage"));
   }
 
   @Test
@@ -406,12 +406,11 @@ public class BaseProcessorTest {
         "io.vertx.test.postprocessors.language");
     compiler.assertCompile();
     String content = compiler.processor.getDoc("io.vertx.test.postprocessors.language");
-    String processed = compiler.processor.applyPostProcessors(content);
 
-    assertThat(processed, containsString("This is only displayed for java."));
-    assertThat(processed, not(containsString("This is only displayed for javascript and ruby.")));
-    assertThat(processed, not(containsString("----")));
-    assertThat(processed, not(containsString("[language")));
+    assertThat(content, containsString("This is only displayed for java."));
+    assertThat(content, not(containsString("This is only displayed for javascript and ruby.")));
+    assertThat(content, not(containsString("----")));
+    assertThat(content, not(containsString("[language")));
 
 
     // fake-JavaScript
@@ -424,9 +423,8 @@ public class BaseProcessorTest {
         "io.vertx.test.postprocessors.language");
     compiler.assertCompile();
     content = compiler.processor.getDoc("io.vertx.test.postprocessors.language");
-    processed = compiler.processor.applyPostProcessors(content);
-    assertThat(processed, not(containsString("This is only displayed for java.")));
-    assertThat(processed, containsString("This is only displayed for javascript and ruby."));
+    assertThat(content, not(containsString("This is only displayed for java.")));
+    assertThat(content, containsString("This is only displayed for javascript and ruby."));
 
     // fake-groovy
     compiler = buildCompiler(new TestGenProcessor() {
@@ -438,9 +436,8 @@ public class BaseProcessorTest {
         "io.vertx.test.postprocessors.language");
     compiler.assertCompile();
     content = compiler.processor.getDoc("io.vertx.test.postprocessors.language");
-    processed = compiler.processor.applyPostProcessors(content);
-    assertThat(processed, not(containsString("This is only displayed for java.")));
-    assertThat(processed, not(containsString("This is only displayed for javascript and ruby.")));
+    assertThat(content, not(containsString("This is only displayed for java.")));
+    assertThat(content, not(containsString("This is only displayed for javascript and ruby.")));
   }
 
   @Test
@@ -449,11 +446,11 @@ public class BaseProcessorTest {
         "io.vertx.test.postprocessors.missing");
     compiler.assertCompile();
     String content = compiler.processor.getDoc("io.vertx.test.postprocessors.missing");
-    String processed = compiler.processor.applyPostProcessors(content);
+//    String processed = compiler.processor.applyPostProcessors(content);
 
-    assertThat(processed, containsString("This should be included."));
-    assertThat(processed, containsString("[missing]"));
-    assertThat(processed, containsString("----"));
+    assertThat(content, containsString("This should be included."));
+    assertThat(content, containsString("[missing]"));
+    assertThat(content, containsString("----"));
   }
 
   @Test
@@ -463,13 +460,12 @@ public class BaseProcessorTest {
         "io.vertx.test.postprocessors.code");
     compiler.assertCompile();
     String content = compiler.processor.getDoc("io.vertx.test.postprocessors.code");
-    String processed = compiler.processor.applyPostProcessors(content);
 
-    assertThat(processed, containsString("[source,java]"));
-    assertThat(processed, containsString("[source]"));
-    assertThat(processed, containsString("----"));
-    assertThat(processed, containsString("System.out.println(\"Hello\");"));
-    assertThat(processed, containsString("  System.out.println(\"Bye\");"));
+    assertThat(content, containsString("[source,java]"));
+    assertThat(content, containsString("[source]"));
+    assertThat(content, containsString("----"));
+    assertThat(content, containsString("System.out.println(\"Hello\");"));
+    assertThat(content, containsString("  System.out.println(\"Bye\");"));
   }
 
   @Test
@@ -478,12 +474,11 @@ public class BaseProcessorTest {
         "io.vertx.test.postprocessors.nested");
     compiler.assertCompile();
     String content = compiler.processor.getDoc("io.vertx.test.postprocessors.nested");
-    String processed = compiler.processor.applyPostProcessors(content);
 
-    assertThat(processed, containsString("[source,java]"));
-    assertThat(processed, containsString("----"));
-    assertThat(processed, not(containsString("\\----")));
-    assertThat(processed, containsString("System.out.println(\"Hello\");"));
+    assertThat(content, containsString("[source,java]"));
+    assertThat(content, containsString("----"));
+    assertThat(content, not(containsString("\\----")));
+    assertThat(content, containsString("System.out.println(\"Hello\");"));
   }
 
   @Test
@@ -498,13 +493,12 @@ public class BaseProcessorTest {
       }
 
       @Override
-      public String process(BaseProcessor processor, String content, String... args) {
+      public String process(String name, String content, String... args) {
         return content;
       }
     });
     String content = compiler.processor.getDoc("io.vertx.test.postprocessors.links");
-    String processed = compiler.processor.applyPostProcessors(content);
-    assertThat(processed, containsString("`link:type[BaseProcessor]`"));
+    assertThat(content, containsString("`link:type[BaseProcessor]`"));
   }
 
   @Test

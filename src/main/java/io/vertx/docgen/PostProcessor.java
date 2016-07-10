@@ -15,7 +15,7 @@ public interface PostProcessor {
 
   String getName();
 
-  String process(BaseProcessor processor, String content, String... args);
+  String process(String name, String content, String... args);
 
   static boolean isBlockDeclaration(String line) {
     return BLOCK_DECLARATION.matcher(line).matches();

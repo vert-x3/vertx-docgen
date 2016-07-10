@@ -4,7 +4,6 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
-import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -16,11 +15,35 @@ public class TestGenProcessor extends JavaDocGenProcessor {
   Map<String, String> results = new HashMap<>();
 
   @Override
-  protected String resolveLinkToPackageDoc(PackageElement elt) {
-    return "package[" + elt.getQualifiedName() + "]";
+  protected DocGenerator generator() {
+    return new JavaDocGenerator() {
+      @Override
+      public String getName() {
+        return TestGenProcessor.this.getName();
+      }
+      @Override
+      public String resolveTypeLink(TypeElement elt, Coordinate coordinate) {
+        return TestGenProcessor.this.resolveTypeLink(elt, coordinate);
+      }
+      @Override
+      public String resolveConstructorLink(ExecutableElement elt, Coordinate coordinate) {
+        return TestGenProcessor.this.resolveConstructorLink(elt, coordinate);
+      }
+      @Override
+      public String resolveMethodLink(ExecutableElement elt, Coordinate coordinate) {
+        return TestGenProcessor.this.resolveMethodLink(elt, coordinate);
+      }
+      @Override
+      public String resolveFieldLink(VariableElement elt, Coordinate coordinate) {
+        return TestGenProcessor.this.resolveFieldLink(elt, coordinate);
+      }
+    };
   }
 
-  @Override
+  protected String getName() {
+    return "java";
+  }
+
   protected String resolveTypeLink(TypeElement elt, Coordinate coordinate) {
     switch (elt.getKind()) {
       case ANNOTATION_TYPE:
@@ -35,17 +58,14 @@ public class TestGenProcessor extends JavaDocGenProcessor {
     }
   }
 
-  @Override
   protected String resolveConstructorLink(ExecutableElement elt, Coordinate coordinate) {
     return "constructor";
   }
 
-  @Override
   protected String resolveMethodLink(ExecutableElement elt, Coordinate coordinate) {
     return "method";
   }
 
-  @Override
   protected String resolveFieldLink(VariableElement elt, Coordinate coordinate) {
     switch (elt.getKind()) {
       case ENUM_CONSTANT:
@@ -58,14 +78,13 @@ public class TestGenProcessor extends JavaDocGenProcessor {
   }
 
   @Override
-  protected void handleGen(PackageElement docElt) {
-    StringWriter buffer = new StringWriter();
-    process(buffer, docElt);
-    String content = buffer.toString();
+  protected void write(DocGenerator generator, PackageElement docElt, String content) {
     results.put(docElt.getQualifiedName().toString(), content);
+    super.write(generator, docElt, content);
   }
 
   public String getDoc(String name) {
     return results.get(name);
   }
+
 }

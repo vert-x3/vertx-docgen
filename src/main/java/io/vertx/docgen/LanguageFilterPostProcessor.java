@@ -10,11 +10,11 @@ public class LanguageFilterPostProcessor implements PostProcessor {
   }
 
   @Override
-  public String process(BaseProcessor processor, String content, String... args) {
+  public String process(String name, String content, String... args) {
     if (args.length == 0) {
       throw new IllegalArgumentException("The post-processor '" + getName() + "' requires at least one argument");
     }
-    if (matches(processor.getName(), args)) {
+    if (matches(name, args)) {
       return content;
     }
     return EMPTY_CONTENT;
