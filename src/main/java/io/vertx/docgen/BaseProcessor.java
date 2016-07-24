@@ -17,10 +17,13 @@ import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 import java.io.*;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -29,6 +32,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
 
   protected DocTrees docTrees;
   protected Helper helper;
+  protected List<String> sources;
   protected Set<PostProcessor> postProcessors = new LinkedHashSet<>();
   Map<String, String> failures = new HashMap<>();
 
@@ -39,12 +43,12 @@ public abstract class BaseProcessor extends AbstractProcessor {
 
   @Override
   public Set<String> getSupportedOptions() {
-    return new HashSet<>(Arrays.asList("docgen.output", "docgen.extension"));
+    return new HashSet<>(Arrays.asList("docgen.output", "docgen.extension", "docgen.source"));
   }
 
   @Override
   public Set<String> getSupportedAnnotationTypes() {
-    return Collections.singleton(Document.class.getName());
+    return Collections.singleton("*");
   }
 
   public synchronized BaseProcessor registerPostProcessor(PostProcessor postProcessor) {
@@ -69,6 +73,10 @@ public abstract class BaseProcessor extends AbstractProcessor {
   @Override
   public synchronized void init(ProcessingEnvironment processingEnv) {
     super.init(processingEnv);
+    String sourceOpt = processingEnv.getOptions().get("docgen.source");
+    if (sourceOpt != null) {
+      sources = new ArrayList<>(Arrays.asList(sourceOpt.split("\\s*,\\s*")));
+    }
     docTrees = DocTrees.instance(processingEnv);
     helper = new Helper(processingEnv);
     registerPostProcessor(new LanguageFilterPostProcessor());
@@ -91,38 +99,63 @@ public abstract class BaseProcessor extends AbstractProcessor {
   @Override
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
     if (failures.isEmpty()) {
-      roundEnv.getElementsAnnotatedWith(Document.class).forEach(elt -> {
-        PackageElement pkgElt = (PackageElement) elt;
-        try {
-          handleGen(pkgElt);
-        } catch (Exception e) {
-          Element reportedElt = (e instanceof DocGenException) ? ((DocGenException) e).getElement() : elt;
-          String msg = e.getMessage();
-          if (msg == null) {
-            msg = e.toString();
+      try {
+        if (!roundEnv.processingOver()) {
+          roundEnv.getElementsAnnotatedWith(Document.class).forEach(elt -> {
+            try {
+              handleGen(new PackageDoc((PackageElement) elt));
+            } catch (DocGenException e) {
+              if (e.element == null) {
+                e.element = elt;
+              }
+              throw e;
+            }
+          });
+        } else {
+          if (sources != null) {
+            for (String source : sources) {
+              File f = new File(source);
+              if (!f.exists()) {
+                throw new FileNotFoundException("Cannot process document " + source);
+              }
+              if (!f.isFile()) {
+                throw new IOException("Document " + source + " is not a file");
+              }
+              handleGen(new FileDoc(f));
+            }
           }
-          e.printStackTrace();
+        }
+      } catch(Exception e) {
+        Element reportedElt = (e instanceof DocGenException) ? ((DocGenException) e).element : null;
+        String msg = e.getMessage();
+        if (msg == null) {
+          msg = e.toString();
+        }
+        e.printStackTrace();
+        if (reportedElt != null) {
           processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg, reportedElt);
           if (reportedElt instanceof PackageElement) {
             failures.put(((PackageElement) reportedElt).getQualifiedName().toString(), msg);
           } else {
             throw new UnsupportedOperationException("not implemented");
           }
+        } else {
+          processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg);
         }
-      });
+      }
     }
     return false;
   }
 
   protected abstract Iterable<DocGenerator> generators();
 
-  private final void handleGen(PackageElement pkgElt) {
+  private final void handleGen(Doc doc) {
     for (DocGenerator generator : generators()) {
       generator.init(processingEnv);
       StringWriter buffer = new StringWriter();
-      process(generator, buffer, pkgElt);
+      process(generator, buffer, doc);
       String content = postProcess(generator.getName(), buffer.toString());
-      write(generator, pkgElt, content);
+      write(generator, doc, content);
     }
   }
 
@@ -218,217 +251,286 @@ public abstract class BaseProcessor extends AbstractProcessor {
 
   private final LinkedList<PackageElement> stack = new LinkedList<>();
 
-  protected final void process(DocGenerator generator, Writer buffer, PackageElement pkgElt) {
+  interface Doc {
+    String id();
+    String resolveRelativeFileName(DocGenerator generator);
+  }
 
-    for (PackageElement stackElt : stack) {
-      if (pkgElt.getQualifiedName().equals(stackElt.getQualifiedName())) {
-        throw new DocException(stack.peekLast(), "Circular include");
-      }
+  class PackageDoc implements Doc {
+
+    final PackageElement elt;
+
+    PackageDoc(PackageElement elt) {
+      this.elt = elt;
     }
-    stack.addLast(pkgElt);
 
-    DocWriter writer = new DocWriter(buffer);
-    String pkgSource = helper.readSource(pkgElt);
-    TreePath pkgTree = docTrees.getPath(pkgElt);
-    DocCommentTree doc = docTrees.getDocCommentTree(pkgTree);
-    DocTreeVisitor<Void, Void> visitor = new DocTreeScanner<Void, Void>() {
+    @Override
+    public String id() {
+      return elt.getQualifiedName().toString();
+    }
 
-      private void copyContent(DocTree node) {
-        int from = (int) docTrees.getSourcePositions().getStartPosition(pkgTree.getCompilationUnit(), doc, node);
-        int to = (int) docTrees.getSourcePositions().getEndPosition(pkgTree.getCompilationUnit(), doc, node);
-        writer.append(pkgSource, from, to);
+    /**
+     * Return the relative file name of a document.
+     *
+     * @param generator the doc generator
+     * @return the relative file name
+     */
+    public String resolveRelativeFileName(DocGenerator generator) {
+      Document doc = elt.getAnnotation(Document.class);
+      String relativeName = doc.fileName();
+      if (relativeName.isEmpty()) {
+        relativeName = elt.getQualifiedName() + getExtension();
       }
+      return generator.resolveRelativeFileName(elt, relativeName);
+    }
+  }
 
-      @Override
-      public Void visitUnknownBlockTag(UnknownBlockTagTree node, Void v) {
-        writer.append("@").append(node.getTagName()).append(" ");
-        return super.visitUnknownBlockTag(node, v);
-      }
+  class FileDoc implements Doc {
 
-      @Override
-      public Void visitDocComment(DocCommentTree node, Void v) {
-        v = scan(node.getFirstSentence(), v);
-        List<? extends DocTree> body = node.getBody();
-        if (body.size() > 0) {
-          writer.append("\n\n");
-          writer.resetParagraph();
-          v = scan(body, v);
+    final File file;
+
+    FileDoc(File file) {
+      this.file = file;
+    }
+
+    @Override
+    public String id() {
+      return file.getName();
+    }
+
+    @Override
+    public String resolveRelativeFileName(DocGenerator generator) {
+      return file.getName();
+    }
+  }
+
+  protected final void process(DocGenerator generator, Writer buffer, Doc doc) {
+
+    if (doc instanceof PackageDoc) {
+      PackageElement pkgElt = ((PackageDoc) doc).elt;
+      for (PackageElement stackElt : stack) {
+        if (pkgElt.getQualifiedName().equals(stackElt.getQualifiedName())) {
+          throw new DocGenException(stack.peekLast(), "Circular include");
         }
-        List<? extends DocTree> blockTags = node.getBlockTags();
-        if (blockTags.size() > 0) {
-          writer.append("\n");
-          v = scan(blockTags, v);
+      }
+      stack.addLast(pkgElt);
+
+      DocWriter writer = new DocWriter(buffer);
+      String pkgSource = helper.readSource(pkgElt);
+      TreePath pkgPath = docTrees.getPath(pkgElt);
+      DocCommentTree docTree = docTrees.getDocCommentTree(pkgPath);
+      DocTreeVisitor<Void, Void> visitor = new DocTreeScanner<Void, Void>() {
+
+        private void copyContent(DocTree node) {
+          int from = (int) docTrees.getSourcePositions().getStartPosition(pkgPath.getCompilationUnit(), docTree, node);
+          int to = (int) docTrees.getSourcePositions().getEndPosition(pkgPath.getCompilationUnit(), docTree, node);
+          writer.append(pkgSource, from, to);
         }
-        return v;
-      }
 
-      @Override
-      public Void visitErroneous(ErroneousTree node, Void v) {
-        return visitText(node, v);
-      }
+        @Override
+        public Void visitUnknownBlockTag(UnknownBlockTagTree node, Void v) {
+          writer.append("@").append(node.getTagName()).append(" ");
+          return super.visitUnknownBlockTag(node, v);
+        }
 
-      @Override
-      public Void visitText(TextTree node, Void v) {
-        String body = node.getBody();
-        Matcher matcher = Helper.LANG_PATTERN.matcher(body);
+        @Override
+        public Void visitDocComment(DocCommentTree node, Void v) {
+          v = scan(node.getFirstSentence(), v);
+          List<? extends DocTree> body = node.getBody();
+          if (body.size() > 0) {
+            writer.append("\n\n");
+            writer.resetParagraph();
+            v = scan(body, v);
+          }
+          List<? extends DocTree> blockTags = node.getBlockTags();
+          if (blockTags.size() > 0) {
+            writer.append("\n");
+            v = scan(blockTags, v);
+          }
+          return v;
+        }
+
+        @Override
+        public Void visitErroneous(ErroneousTree node, Void v) {
+          return visitText(node, v);
+        }
+
+        @Override
+        public Void visitText(TextTree node, Void v) {
+          String body = node.getBody();
+          Matcher matcher = Helper.LANG_PATTERN.matcher(body);
+          int prev = 0;
+          while (matcher.find()) {
+            writer.append(body, prev, matcher.start());
+            if (matcher.group(1) != null) {
+              // \$lang
+              writer.append("$lang");
+            } else {
+              writer.append(generator.getName());
+            }
+            prev = matcher.end();
+          }
+          writer.append(body, prev, body.length());
+          return super.visitText(node, v);
+        }
+
+        /**
+         * Handles both literal and code. We generate the asciidoc output using {@literal `}.
+         */
+        @Override
+        public Void visitLiteral(LiteralTree node, Void aVoid) {
+          writer.append("`").append(node.getBody().getBody()).append("`");
+          return super.visitLiteral(node, aVoid);
+        }
+
+        @Override
+        public Void visitEntity(EntityTree node, Void aVoid) {
+          writer.append(EntityUtils.unescapeEntity(node.getName().toString()));
+          return super.visitEntity(node, aVoid);
+        }
+
+        @Override
+        public Void visitStartElement(StartElementTree node, Void v) {
+          copyContent(node);
+          return v;
+        }
+
+        @Override
+        public Void visitEndElement(EndElementTree node, Void v) {
+          writer.write("</");
+          writer.append(node.getName());
+          writer.append('>');
+          return v;
+        }
+
+        @Override
+        public Void visitLink(LinkTree node, Void v) {
+          String signature = node.getReference().getSignature();
+          String label = render(node.getLabel()).trim();
+          BaseProcessor.this.visitLink(pkgElt, label, signature, generator, writer);
+          return v;
+        }
+      };
+      docTree.accept(visitor, null);
+      stack.removeLast();
+    } else {
+      FileDoc fileDoc = (FileDoc) doc;
+      try {
+        String content = new String(Files.readAllBytes(fileDoc.file.toPath()), StandardCharsets.UTF_8);
+        Matcher matcher = ABC.matcher(content);
         int prev = 0;
         while (matcher.find()) {
-          writer.append(body, prev, matcher.start());
-          if (matcher.group(1) != null) {
-            // \$lang
-            writer.append("$lang");
-          } else {
-            writer.append(generator.getName());
+          buffer.write(content, prev, matcher.start() - prev);
+          String value = matcher.group(1).trim();
+          StringTokenizer tokenizer = new StringTokenizer(value);
+          if (tokenizer.hasMoreTokens()) {
+            String signature = tokenizer.nextToken();
+            String label = value.substring(signature.length()).trim();
+            BaseProcessor.this.visitLink(null, label, signature, generator, new DocWriter(buffer));
           }
           prev = matcher.end();
         }
-        writer.append(body, prev, body.length());
-        return super.visitText(node, v);
+        buffer.append(content, prev, content.length());
+      } catch (IOException e) {
+        throw new DocGenException(e.getMessage());
       }
-
-      /**
-       * Handles both literal and code. We generate the asciidoc output using {@literal `}.
-       */
-      @Override
-      public Void visitLiteral(LiteralTree node, Void aVoid) {
-        writer.append("`").append(node.getBody().getBody()).append("`");
-        return super.visitLiteral(node, aVoid);
-      }
-
-      @Override
-      public Void visitEntity(EntityTree node, Void aVoid) {
-        writer.append(EntityUtils.unescapeEntity(node.getName().toString()));
-        return super.visitEntity(node, aVoid);
-      }
-
-      @Override
-      public Void visitStartElement(StartElementTree node, Void v) {
-        copyContent(node);
-        return v;
-      }
-
-      @Override
-      public Void visitEndElement(EndElementTree node, Void v) {
-        writer.write("</");
-        writer.append(node.getName());
-        writer.append('>');
-        return v;
-      }
-
-      @Override
-      public Void visitLink(LinkTree node, Void v) {
-        String signature = node.getReference().getSignature();
-        Element resolvedElt = helper.resolveLink(signature);
-        if (resolvedElt == null) {
-          throw new DocGenException(pkgElt, "Could not resolve " + signature);
-        } else if (resolvedElt instanceof PackageElement) {
-          PackageElement includedElt = (PackageElement) resolvedElt;
-          if (includedElt.getAnnotation(Document.class) == null) {
-            process(generator, writer, includedElt);
-          } else {
-            String link = resolveLinkToPackageDoc((PackageElement) resolvedElt);
-            writer.append(link);
-          }
-        } else {
-          if (helper.isExample(resolvedElt)) {
-            String source = helper.readSource(resolvedElt);
-            switch (resolvedElt.getKind()) {
-              case CONSTRUCTOR:
-              case METHOD:
-                // Check whether or not the fragment must be translated
-                String fragment;
-                if (helper.hasToBeTranslated(resolvedElt)) {
-                  // Invoke the custom renderer, this may should the translation to the expected language.
-                  fragment = generator.renderSource((ExecutableElement) resolvedElt, source);
-                } else {
-                  // Do not call the custom rendering process, just use the default / java one.
-                  JavaDocGenerator javaGen = new JavaDocGenerator();
-                  javaGen.init(processingEnv);
-                  fragment = javaGen.renderSource((ExecutableElement) resolvedElt, source);
-                }
-                if (fragment != null) {
-                  writer.literalMode();
-                  writer.append(fragment);
-                  writer.commentMode();
-                }
-                return v;
-              case CLASS:
-                if (helper.hasToBeTranslated(resolvedElt)) {
-                  throw new UnsupportedOperationException("File inclusion is only supported for not translated" +
-                      " Java classes");
-                }
-                if (source != null) {
-                  writer.literalMode();
-                  writer.append(source);
-                  writer.commentMode();
-                }
-                return v;
-              default:
-                throw new UnsupportedOperationException("unsupported element: " + resolvedElt.getKind());
-            }
-          }
-          String link;
-          switch (resolvedElt.getKind()) {
-            case CLASS:
-            case INTERFACE:
-            case ANNOTATION_TYPE:
-            case ENUM: {
-              TypeElement typeElt = (TypeElement) resolvedElt;
-              link = generator.resolveTypeLink(typeElt, resolveCoordinate(typeElt));
-              break;
-            }
-            case METHOD: {
-              ExecutableElement methodElt = (ExecutableElement) resolvedElt;
-              TypeElement typeElt = (TypeElement) methodElt.getEnclosingElement();
-              link = generator.resolveMethodLink(methodElt, resolveCoordinate(typeElt));
-              break;
-            }
-            case CONSTRUCTOR: {
-              ExecutableElement constructorElt = (ExecutableElement) resolvedElt;
-              TypeElement typeElt = (TypeElement) constructorElt.getEnclosingElement();
-              link = generator.resolveConstructorLink(constructorElt, resolveCoordinate(typeElt));
-              break;
-            }
-            case FIELD:
-            case ENUM_CONSTANT: {
-              VariableElement variableElt = (VariableElement) resolvedElt;
-              TypeElement typeElt = (TypeElement) variableElt.getEnclosingElement();
-              link = generator.resolveFieldLink(variableElt, resolveCoordinate(typeElt));
-              break;
-            }
-            default:
-              throw new UnsupportedOperationException("Not yet implemented " + resolvedElt + " with kind " + resolvedElt.getKind());
-          }
-          String label = render(node.getLabel()).trim();
-          if (label.length() == 0) {
-            label = resolveLabel(generator, resolvedElt);
-          }
-          if (link != null) {
-            writer.append("`link:").append(link).append("[").append(label).append("]`");
-          } else {
-            writer.append("`").append(label).append("`");
-          }
-        }
-        return v;
-      }
-    };
-    doc.accept(visitor, null);
-    stack.removeLast();
+    }
   }
 
-  /**
-   * Return the relative file name of a document.
-   *
-   * @param docElt the doc elt
-   * @return the relative file name
-   */
-  private String resolveRelativeFileName(DocGenerator generator, PackageElement docElt) {
-    Document doc = docElt.getAnnotation(Document.class);
-    String relativeName = doc.fileName();
-    if (relativeName.isEmpty()) {
-      relativeName = docElt.getQualifiedName() + getExtension();
+  private static final Pattern ABC = Pattern.compile("\\{@link\\s([^}]+)\\}");
+  private static final Pattern DEF = Pattern.compile("\\s");
+
+  private void visitLink(PackageElement pkgElt, String label, String signature, DocGenerator generator, DocWriter writer) {
+    Element resolvedElt = helper.resolveLink(signature);
+    if (resolvedElt == null) {
+      throw new DocGenException(pkgElt, "Could not resolve " + signature);
+    } else if (resolvedElt instanceof PackageElement) {
+      PackageElement includedElt = (PackageElement) resolvedElt;
+      if (includedElt.getAnnotation(Document.class) == null) {
+        process(generator, writer, new PackageDoc(includedElt));
+      } else {
+        String link = resolveLinkToPackageDoc((PackageElement) resolvedElt);
+        writer.append(link);
+      }
+    } else {
+      if (helper.isExample(resolvedElt)) {
+        String source = helper.readSource(resolvedElt);
+        switch (resolvedElt.getKind()) {
+          case CONSTRUCTOR:
+          case METHOD:
+            // Check whether or not the fragment must be translated
+            String fragment;
+            if (helper.hasToBeTranslated(resolvedElt)) {
+              // Invoke the custom renderer, this may should the translation to the expected language.
+              fragment = generator.renderSource((ExecutableElement) resolvedElt, source);
+            } else {
+              // Do not call the custom rendering process, just use the default / java one.
+              JavaDocGenerator javaGen = new JavaDocGenerator();
+              javaGen.init(processingEnv);
+              fragment = javaGen.renderSource((ExecutableElement) resolvedElt, source);
+            }
+            if (fragment != null) {
+              writer.literalMode();
+              writer.append(fragment);
+              writer.commentMode();
+            }
+            return;
+          case CLASS:
+            if (helper.hasToBeTranslated(resolvedElt)) {
+              throw new UnsupportedOperationException("File inclusion is only supported for not translated" +
+                  " Java classes");
+            }
+            if (source != null) {
+              writer.literalMode();
+              writer.append(source);
+              writer.commentMode();
+            }
+            return;
+          default:
+            throw new UnsupportedOperationException("unsupported element: " + resolvedElt.getKind());
+        }
+      }
+      String link;
+      switch (resolvedElt.getKind()) {
+        case CLASS:
+        case INTERFACE:
+        case ANNOTATION_TYPE:
+        case ENUM: {
+          TypeElement typeElt = (TypeElement) resolvedElt;
+          link = generator.resolveTypeLink(typeElt, resolveCoordinate(typeElt));
+          break;
+        }
+        case METHOD: {
+          ExecutableElement methodElt = (ExecutableElement) resolvedElt;
+          TypeElement typeElt = (TypeElement) methodElt.getEnclosingElement();
+          link = generator.resolveMethodLink(methodElt, resolveCoordinate(typeElt));
+          break;
+        }
+        case CONSTRUCTOR: {
+          ExecutableElement constructorElt = (ExecutableElement) resolvedElt;
+          TypeElement typeElt = (TypeElement) constructorElt.getEnclosingElement();
+          link = generator.resolveConstructorLink(constructorElt, resolveCoordinate(typeElt));
+          break;
+        }
+        case FIELD:
+        case ENUM_CONSTANT: {
+          VariableElement variableElt = (VariableElement) resolvedElt;
+          TypeElement typeElt = (TypeElement) variableElt.getEnclosingElement();
+          link = generator.resolveFieldLink(variableElt, resolveCoordinate(typeElt));
+          break;
+        }
+        default:
+          throw new UnsupportedOperationException("Not yet implemented " + resolvedElt + " with kind " + resolvedElt.getKind());
+      }
+      if (label.length() == 0) {
+        label = resolveLabel(generator, resolvedElt);
+      }
+      if (link != null) {
+        writer.append("`link:").append(link).append("[").append(label).append("]`");
+      } else {
+        writer.append("`").append(label).append("`");
+      }
     }
-    return generator.resolveRelativeFileName(docElt, relativeName);
   }
 
   protected String postProcess(String name, String content) {
@@ -437,18 +539,18 @@ public abstract class BaseProcessor extends AbstractProcessor {
     return processed;
   }
 
-  protected void write(DocGenerator generator, PackageElement docElt, String content) {
+  protected void write(DocGenerator generator, Doc doc, String content) {
     String outputOpt = processingEnv.getOptions().get("docgen.output");
     if (outputOpt != null) {
       outputOpt = outputOpt.replace("$lang", generator.getName());
-      String relativeName = resolveRelativeFileName(generator, docElt);
+      String relativeName = doc.resolveRelativeFileName(generator);
       try {
         File dir = new File(outputOpt);
         for (int i = relativeName.indexOf('/'); i != -1; i = relativeName.indexOf('/', i + 1)) {
           dir = new File(dir, relativeName.substring(0, i));
           relativeName = relativeName.substring(i + 1);
         }
-        ensureDir(docElt, dir);
+        ensureDir(dir);
         File file = new File(dir, relativeName);
         try (FileWriter writer = new FileWriter(file)) {
           writer.write(content);
@@ -499,13 +601,13 @@ public abstract class BaseProcessor extends AbstractProcessor {
     return processed.toString();
   }
 
-  private void ensureDir(PackageElement elt, File dir) {
+  private void ensureDir(File dir) {
     if (dir.exists()) {
       if (!dir.isDirectory()) {
-        throw new DocGenException(elt, "File " + dir.getAbsolutePath() + " is not a dir");
+        throw new DocGenException("File " + dir.getAbsolutePath() + " is not a dir");
       }
     } else if (!dir.mkdirs()) {
-      throw new DocGenException(elt, "could not create dir " + dir.getAbsolutePath());
+      throw new DocGenException("could not create dir " + dir.getAbsolutePath());
     }
   }
 

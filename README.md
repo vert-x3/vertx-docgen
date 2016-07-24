@@ -24,6 +24,8 @@ easily spot the affected doc (using git diff or something)
 annotation can specify an optional `fileName` member otherwise the document file name will be generated using the
 annotated element.
 
+File documents can also be processed with the `docgen.source` processor option.
+
 ### Document modulalization
 
 The `{@link }` Javadoc tag includes or link to the target doc when the target is a package. This can be used to make your

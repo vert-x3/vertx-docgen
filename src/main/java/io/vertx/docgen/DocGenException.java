@@ -7,14 +7,14 @@ import javax.lang.model.element.Element;
  */
 public class DocGenException extends RuntimeException {
 
-  private final Element element;
+  Element element;
 
   public DocGenException(Element element, String msg) {
     super(msg);
     this.element = element;
   }
 
-  public Element getElement() {
-    return element;
+  public DocGenException(String msg) {
+    super(msg);
   }
 }

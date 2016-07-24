@@ -66,8 +66,8 @@ public class CustomTestGenProcessor extends JavaDocGenProcessor {
   }
 
   @Override
-  protected void write(DocGenerator generator, PackageElement docElt, String content) {
-    results.put(docElt.getQualifiedName().toString(), content);
+  protected void write(DocGenerator generator, Doc doc, String content) {
+    results.put(doc.id(), content);
   }
 
   public String getDoc(String name) {

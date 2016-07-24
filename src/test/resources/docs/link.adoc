@@ -1,0 +1,1 @@
+<before>{@link io.vertx.test.file.TheClass}<after>
