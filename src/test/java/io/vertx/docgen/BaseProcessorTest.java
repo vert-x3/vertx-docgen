@@ -560,6 +560,13 @@ public class BaseProcessorTest {
   }
 
   @Test
+  public void testDocFileWithLinkToUnresolvableType() throws Exception {
+    Compiler<TestGenProcessor> compiler = buildCompiler(new TestGenProcessor(),  "io.vertx.test.file");
+    compiler.setOption("docgen.source", docFile("docs/linktounresolvabletype.adoc").getAbsolutePath());
+    compiler.failCompile();
+  }
+
+  @Test
   public void testDocFileNotFound() throws Exception {
     Compiler<TestGenProcessor> compiler = buildCompiler(new TestGenProcessor(),  "io.vertx.test.file");
     compiler.setOption("docgen.source", new File(new File("."), "does_not_exists").getAbsolutePath());
@@ -573,10 +580,14 @@ public class BaseProcessorTest {
     compiler.failCompile();
   }
 
-  private String assertDocFile(String relativeName) throws Exception {
+  private File docFile(String relativeName) throws Exception {
     URL resource = BaseProcessorTest.class.getClassLoader().getResource(relativeName);
     assertNotNull(resource);
-    File src = new File(resource.toURI());
+    return new File(resource.toURI());
+  }
+
+  private String assertDocFile(String relativeName) throws Exception {
+    File src = docFile(relativeName);
     Compiler<TestGenProcessor> compiler = buildCompiler(new TestGenProcessor(),  "io.vertx.test.file");
     compiler.setOption("docgen.source", src.getAbsolutePath());
     compiler.assertCompile();
