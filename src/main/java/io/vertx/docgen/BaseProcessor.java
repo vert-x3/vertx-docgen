@@ -476,13 +476,16 @@ public abstract class BaseProcessor extends AbstractProcessor {
             }
             return;
           case CLASS:
-            if (helper.hasToBeTranslated(resolvedElt)) {
-              throw new UnsupportedOperationException("File inclusion is only supported for not translated" +
-                  " Java classes");
-            }
-            if (source != null) {
+          case INTERFACE:
+          case ENUM:
+          case ANNOTATION_TYPE:
+            TypeElement typeElt = (TypeElement) resolvedElt;
+            JavaDocGenerator javaGen = new JavaDocGenerator();
+            javaGen.init(processingEnv);
+            fragment = javaGen.renderSource(typeElt, source);
+            if (fragment != null) {
               writer.literalMode();
-              writer.append(source);
+              writer.append(fragment);
               writer.commentMode();
             }
             return;

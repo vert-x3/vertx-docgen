@@ -187,6 +187,70 @@ public class BaseProcessorTest {
   }
 
   @Test
+  public void testIncludeAnnotatedClass() throws Exception {
+    assertEquals(
+        "before_include@Source\n" +
+            "public class TheExample {\n" +
+            "\n" +
+            "  // Some comment\n" +
+            "  private String f;\n" +
+            "\n" +
+            "  public void someMethod() {\n" +
+            "    System.out.println(f);\n" +
+            "  }\n" +
+            "}after_include", assertDoc("io.vertx.test.includeannotatedclass"));
+  }
+
+  @Test
+  public void testIncludeClassFromAnnotatedPackage() throws Exception {
+    assertEquals(
+        "before_includepublic class TheExample {\n" +
+            "\n" +
+            "  // Some comment\n" +
+            "  private String f;\n" +
+            "\n" +
+            "  public void someMethod() {\n" +
+            "    System.out.println(f);\n" +
+            "  }\n" +
+            "}after_include", assertDoc("io.vertx.test.includeclassfromannotatedpkg"));
+  }
+
+  @Test
+  public void testIncludeAnnotatedInterface() throws Exception {
+    assertEquals(
+        "before_include@Source\n" +
+            "public interface TheExample {\n" +
+            "\n" +
+            "  void someMethod();\n" +
+            "\n" +
+            "}after_include", assertDoc("io.vertx.test.includeannotatedinterface"));
+  }
+
+  @Test
+  public void testIncludeAnnotatedEnum() throws Exception {
+    assertEquals(
+        "before_include@Source\n" +
+            "public enum TheExample {\n" +
+            "\n" +
+            "  A,\n" +
+            "  B,\n" +
+            "  C\n" +
+            "\n" +
+            "}after_include", assertDoc("io.vertx.test.includeannotatedenum"));
+  }
+
+  @Test
+  public void testIncludeAnnotatedAnnotation() throws Exception {
+    assertEquals(
+        "before_include@Source\n" +
+            "public @interface TheExample {\n" +
+            "\n" +
+            "  String value() default \"\";\n" +
+            "\n" +
+            "}after_include", assertDoc("io.vertx.test.includeannotatedannotation"));
+  }
+
+  @Test
   public void testLinkToPackage() throws Exception {
     assertEquals("io.vertx.test.linktopackage.sub.adoc", assertDoc("io.vertx.test.linktopackage"));
   }

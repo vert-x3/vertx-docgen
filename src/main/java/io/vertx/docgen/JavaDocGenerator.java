@@ -1,10 +1,12 @@
 package io.vertx.docgen;
 
 import com.sun.source.tree.BlockTree;
+import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.LineMap;
 import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.StatementTree;
+import com.sun.source.tree.Tree;
 import com.sun.source.util.DocTrees;
 import com.sun.source.util.TreePath;
 import com.sun.tools.javac.code.Type;
@@ -16,6 +18,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.TypeMirror;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Scanner;
@@ -100,48 +103,58 @@ public class JavaDocGenerator implements DocGenerator {
    */
   @Override
   public String renderSource(ExecutableElement elt, String source) {
-    TreePath resolvedTP = docTrees.getPath(elt);
-    CompilationUnitTree unit = resolvedTP.getCompilationUnit();
-    MethodTree methodTree = (MethodTree) resolvedTP.getLeaf();
-    BlockTree blockTree = methodTree.getBody();
     // Get block
+    TreePath path = docTrees.getPath(elt);
+    MethodTree methodTree = (MethodTree) path.getLeaf();
+    BlockTree blockTree = methodTree.getBody();
     List<? extends StatementTree> statements = blockTree.getStatements();
     if (statements.size() > 0) {
-      int from = (int) docTrees.getSourcePositions().getStartPosition(unit, statements.get(0));
-      int to = (int) docTrees.getSourcePositions().getEndPosition(unit, statements.get(statements.size() - 1));
-      // Correct boundaries
-      while (from > 1 && source.charAt(from - 1) != '\n') {
-        from--;
-      }
-      while (to < source.length() && source.charAt(to) != '\n') {
-        to++;
-      }
-      String block = source.substring(from, to);
-      // Determine margin
-      int blockMargin = Integer.MAX_VALUE;
-      LineMap lineMap = unit.getLineMap();
-      for (StatementTree statement : statements) {
-        int statementStart = (int) docTrees.getSourcePositions().getStartPosition(unit, statement);
-        int lineStart = statementStart;
-        while (lineMap.getLineNumber(statementStart) == lineMap.getLineNumber(lineStart - 1)) {
-          lineStart--;
-        }
-        blockMargin = Math.min(blockMargin, statementStart - lineStart);
-      }
-      // Crop the fragment
-      StringBuilder fragment = new StringBuilder();
-      for (Iterator<String> sc = new Scanner(block).useDelimiter("\n"); sc.hasNext(); ) {
-        String line = sc.next();
-        int margin = Math.min(blockMargin, line.length());
-        line = line.substring(margin);
-        fragment.append(line);
-        if (sc.hasNext()) {
-          fragment.append('\n');
-        }
-      }
-      return fragment.toString();
+      return renderSource(path, statements, source);
     } else {
       return null;
     }
+  }
+
+  public String renderSource(TypeElement elt, String source) {
+    TreePath path = docTrees.getPath(elt);
+    ClassTree classTree = (ClassTree) path.getLeaf();
+    return renderSource(path, Collections.singletonList(classTree), source);
+  }
+
+  public String renderSource(TreePath path, List<? extends Tree> trees, String source) {
+    CompilationUnitTree unit = path.getCompilationUnit();
+    int from = (int) docTrees.getSourcePositions().getStartPosition(unit, trees.get(0));
+    int to = (int) docTrees.getSourcePositions().getEndPosition(unit, trees.get(trees.size() - 1));
+    // Correct boundaries
+    while (from > 1 && source.charAt(from - 1) != '\n') {
+      from--;
+    }
+    while (to < source.length() && source.charAt(to) != '\n') {
+      to++;
+    }
+    String block = source.substring(from, to);
+    // Determine margin
+    int blockMargin = Integer.MAX_VALUE;
+    LineMap lineMap = unit.getLineMap();
+    for (Tree statement : trees) {
+      int statementStart = (int) docTrees.getSourcePositions().getStartPosition(unit, statement);
+      int lineStart = statementStart;
+      while (lineMap.getLineNumber(statementStart) == lineMap.getLineNumber(lineStart - 1)) {
+        lineStart--;
+      }
+      blockMargin = Math.min(blockMargin, statementStart - lineStart);
+    }
+    // Crop the fragment
+    StringBuilder fragment = new StringBuilder();
+    for (Iterator<String> sc = new Scanner(block).useDelimiter("\n"); sc.hasNext(); ) {
+      String line = sc.next();
+      int margin = Math.min(blockMargin, line.length());
+      line = line.substring(margin);
+      fragment.append(line);
+      if (sc.hasNext()) {
+        fragment.append('\n');
+      }
+    }
+    return fragment.toString();
   }
 }
