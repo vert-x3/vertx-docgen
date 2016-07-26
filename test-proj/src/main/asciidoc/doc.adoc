@@ -1,0 +1,3 @@
+= The great project
+
+include::{@link test.proj.foofeature}[]

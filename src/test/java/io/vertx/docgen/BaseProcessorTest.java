@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.URL;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -39,7 +40,7 @@ public class BaseProcessorTest {
 
   @Test
   public void testIncludeCircular() throws Exception {
-    assertTrue(failDoc("io.vertx.test.includecircular").containsKey("io.vertx.test.includecircular"));
+    assertTrue(failDoc("io.vertx.test.includecircular").containsKey("io.vertx.test.includecircular.sub2"));
   }
 
   @Test
@@ -528,6 +529,70 @@ public class BaseProcessorTest {
         "after", assertDoc("io.vertx.test.unknowntag"));
   }
 
+  @Test
+  public void testDocFile() throws Exception {
+    assertEquals("the_content", assertDocFile("docs/simple.adoc"));
+  }
+
+  @Test
+  public void testDocFileLink() throws Exception {
+    assertEquals("<before>`link:type[TheClass]`<after>", assertDocFile("docs/link.adoc"));
+  }
+
+  @Test
+  public void testDocFileLinkWithLabel() throws Exception {
+    assertEquals("<before>`link:type[the label value]`<after>", assertDocFile("docs/linkwithlabel.adoc"));
+  }
+
+  @Test
+  public void testDocFileInclude() throws Exception {
+    assertEquals("<before>Map<String, String> map = new HashMap<>();\n" +
+        "// Some comment\n" +
+        "\n" +
+        "if (true) {\n" +
+        "  // Indented 1\n" +
+        "  if (false) {\n" +
+        "    // Indented 2\n" +
+        "  }\n" +
+        "}\n" +
+        "map.put(\"abc\", \"def\");\n" +
+        "map.get(\"abc\"); // Beyond last statement<after>", assertDocFile("docs/include.adoc"));
+  }
+
+  @Test
+  public void testDocFileWithLinkToUnresolvableType() throws Exception {
+    Compiler<TestGenProcessor> compiler = buildCompiler(new TestGenProcessor(),  "io.vertx.test.file");
+    compiler.setOption("docgen.source", docFile("docs/linktounresolvabletype.adoc").getAbsolutePath());
+    compiler.failCompile();
+  }
+
+  @Test
+  public void testDocFileNotFound() throws Exception {
+    Compiler<TestGenProcessor> compiler = buildCompiler(new TestGenProcessor(),  "io.vertx.test.file");
+    compiler.setOption("docgen.source", new File(new File("."), "does_not_exists").getAbsolutePath());
+    compiler.failCompile();
+  }
+
+  @Test
+  public void testDocFileNotFile() throws Exception {
+    Compiler<TestGenProcessor> compiler = buildCompiler(new TestGenProcessor(),  "io.vertx.test.file");
+    compiler.setOption("docgen.source", new File(".").getAbsolutePath());
+    compiler.failCompile();
+  }
+
+  private File docFile(String relativeName) throws Exception {
+    URL resource = BaseProcessorTest.class.getClassLoader().getResource(relativeName);
+    assertNotNull(resource);
+    return new File(resource.toURI());
+  }
+
+  private String assertDocFile(String relativeName) throws Exception {
+    File src = docFile(relativeName);
+    Compiler<TestGenProcessor> compiler = buildCompiler(new TestGenProcessor(),  "io.vertx.test.file");
+    compiler.setOption("docgen.source", src.getAbsolutePath());
+    compiler.assertCompile();
+    return compiler.processor.getDoc(src.getName());
+  }
 
   private Map<String, String> failDoc(String pkg) throws Exception {
     Compiler<TestGenProcessor> compiler = buildCompiler(new TestGenProcessor(), pkg);
