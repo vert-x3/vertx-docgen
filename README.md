@@ -42,9 +42,9 @@ or a package.
 
 By default the source code is translated to the output language. This feature can be disabled with `@Source
 (translate=false)`. When including source code, the _closest_ (class, package, parent package...) `@Source` annotation
- is looked up and the value of the `translate` attribute is used. 
- 
-When `translate` is set to `false`, it supports the inclusion of Java file (entire file) in the documentation with 
+ is looked up and the value of the `translate` attribute is used.
+
+When `translate` is set to `false`, it supports the inclusion of Java file (entire file) in the documentation with
 the following syntax:
 
 ```
@@ -73,7 +73,7 @@ This is only for java
 ----
 ```
 
-or 
+or
 
 ```
 [language, ruby, groovy]
@@ -118,9 +118,9 @@ the current language being generated (the `docgen.json` name field)
 
 ## Example
 
-See the nested _test_proj_ maven project.
+See the nested [test_proj](https://github.com/vert-x3/vertx-docgen/tree/master/test-proj) project for Maven and Gradle examples.
 
-Given the  files:
+Given the files:
 
 ```
 /**
