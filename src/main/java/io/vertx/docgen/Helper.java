@@ -127,6 +127,8 @@ class Helper {
           String t2 = parameterSignature[j];
           if (t2.indexOf('.') == -1) {
             t1 = t1.substring(t1.lastIndexOf('.') + 1);
+          } else if (t1.indexOf('.') == -1) {
+            t2 = t2.substring(t2.lastIndexOf('.') + 1);
           }
           if (!t1.equals(t2)) {
             return false;
