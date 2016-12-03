@@ -14,9 +14,12 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.StringWriter;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -31,17 +34,23 @@ public class Compiler<P extends Processor> {
   final File classOutput;
   final Collection<File> sources;
   final P processor;
+  final List<Processor> processors;
   final StandardJavaFileManager fileManager;
   final DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
   final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
   final Map<String, String> options = new HashMap<>();
 
-  public Compiler(P processor, Collection<File> sources, File classOutput) {
+  public Compiler(Collection<File> sources, File classOutput, P processor) {
     JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
     this.fileManager = compiler.getStandardFileManager(diagnostics, Locale.ENGLISH, Charset.forName("UTF-8"));
     this.classOutput = classOutput;
     this.sources = sources;
     this.processor = processor;
+    this.processors = new ArrayList<>(Collections.singletonList(processor));
+  }
+
+  void addProcessor(Processor p) {
+    processors.add(p);
   }
 
   void setOption(String name, String value) {
@@ -86,7 +95,7 @@ public class Compiler<P extends Processor> {
         options.entrySet().stream().map(entry -> "-A" + entry.getKey() + "=" + entry.getValue()).collect(Collectors.toList()),
         Collections.<String>emptyList(), files);
     task.setLocale(Locale.ENGLISH);
-    task.setProcessors(Collections.singleton(processor));
+    task.setProcessors(processors);
     return task;
   }
 

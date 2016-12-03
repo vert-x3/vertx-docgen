@@ -2,13 +2,19 @@ package io.vertx.docgen;
 
 import org.junit.Test;
 
+import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.Filer;
 import javax.annotation.processing.Processor;
+import javax.annotation.processing.RoundEnvironment;
+import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
+import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.Writer;
 import java.net.URL;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -16,6 +22,7 @@ import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
@@ -644,6 +651,40 @@ public class BaseProcessorTest {
     compiler.failCompile();
   }
 
+  @Test
+  public void testGen() throws Exception {
+
+    AtomicInteger count = new AtomicInteger();
+    AbstractProcessor proc = new AbstractProcessor() {
+      @Override
+      public Set<String> getSupportedAnnotationTypes() {
+        return Collections.singleton("*");
+      }
+      @Override
+      public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+        if  (count.getAndIncrement() == 0) {
+          try {
+            Filer filer = processingEnv.getFiler();
+            Element elt = processingEnv.getElementUtils().getTypeElement("gen.GeneratedClass");
+            JavaFileObject src = filer.createSourceFile("io.vertx.test.gen.GeneratedClass", elt);
+            try (Writer writer = src.openWriter()) {
+              writer.append("package io.vertx.test.gen;\npublic class AnotherClass {\n}");
+            }
+          } catch (Exception e) {
+            e.printStackTrace();
+          }
+        }
+        return true;
+      }
+    };
+
+    Compiler<TestGenProcessor> compiler = buildCompiler(new TestGenProcessor(),  "io.vertx.test.gen");
+    compiler.addProcessor(proc);
+    compiler.assertCompile();
+    assertEquals(3, count.get());
+
+  }
+
   private File docFile(String relativeName) throws Exception {
     URL resource = BaseProcessorTest.class.getClassLoader().getResource(relativeName);
     assertNotNull(resource);
@@ -709,6 +750,6 @@ public class BaseProcessorTest {
     };
     Files.walkFileTree(fromPath, visitor);
     assertTrue(sources.size() > 0);
-    return new Compiler<>(processor, sources, classOutput);
+    return new Compiler<>(sources, classOutput, processor);
   }
 }
