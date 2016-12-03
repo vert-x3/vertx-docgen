@@ -1,7 +1,6 @@
 package io.vertx.docgen;
 
 import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import java.util.HashMap;

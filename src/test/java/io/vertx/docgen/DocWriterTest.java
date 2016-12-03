@@ -3,7 +3,6 @@ package io.vertx.docgen;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.io.StringWriter;
 
 import static org.junit.Assert.*;
 
@@ -24,13 +23,11 @@ public class DocWriterTest {
 
   @Test
   public void testResetParagraph() throws IOException {
-    StringWriter buffer = new StringWriter();
-    DocWriter writer = new DocWriter(buffer);
+    DocWriter writer = new DocWriter();
     writer.write("abc\n def\n");
-    assertEquals("abc\ndef\n", buffer.toString());
     writer.resetParagraph();
     writer.write("ghi\n jkl");
-    assertEquals("abc\ndef\nghi\njkl", buffer.toString());
+    assertEquals("abc\ndef\nghi\njkl", writer.render());
   }
 
   @Test
@@ -43,18 +40,35 @@ public class DocWriterTest {
     assertLiteralText("abc\n def\n ghi", "abc\n def\n ghi");
   }
 
+  @Test
+  public void testFuture() throws IOException {
+    DocWriter writer = new DocWriter();
+    writer.write("a");
+    writer.write(() -> {
+      DocWriter n1 = new DocWriter();
+      n1.write("b");
+      n1.write(() -> {
+        DocWriter n2 = new DocWriter();
+        n2.write("c");
+        return n2;
+      });
+      return n1;
+    });
+    writer.write("d");
+    assertEquals("abcd", writer.render());
+    assertEquals("", writer.render());
+  }
+
   private void assertCommentText(String actual, String expected) throws IOException {
-    StringWriter buffer = new StringWriter();
-    DocWriter writer = new DocWriter(buffer);
+    DocWriter writer = new DocWriter();
     writer.write(actual);
-    assertEquals(expected, buffer.toString());
+    assertEquals(expected, writer.render());
   }
 
   private void assertLiteralText(String actual, String expected) throws IOException {
-    StringWriter buffer = new StringWriter();
-    DocWriter writer = new DocWriter(buffer);
+    DocWriter writer = new DocWriter();
     writer.literalMode();
     writer.write(actual);
-    assertEquals(expected, buffer.toString());
+    assertEquals(expected, writer.render());
   }
 }

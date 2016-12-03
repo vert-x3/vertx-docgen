@@ -34,6 +34,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
   protected Helper helper;
   protected List<String> sources;
   protected Set<PostProcessor> postProcessors = new LinkedHashSet<>();
+  protected Map<String, ElementResolution> resolutions = new HashMap<>();
   Map<String, String> failures = new HashMap<>();
 
   @Override
@@ -95,6 +96,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
     return buffer.toString();
   }
 
+  private final Map<Doc, Map<DocGenerator, DocWriter>> state = new HashMap<>();
 
   @Override
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
@@ -103,7 +105,8 @@ public abstract class BaseProcessor extends AbstractProcessor {
         if (!roundEnv.processingOver()) {
           roundEnv.getElementsAnnotatedWith(Document.class).forEach(elt -> {
             try {
-              handleGen(new PackageDoc((PackageElement) elt));
+              PackageDoc doc = new PackageDoc((PackageElement) elt);
+              state.put(doc, handleGen(doc));
             } catch (DocGenException e) {
               if (e.element == null) {
                 e.element = elt;
@@ -111,8 +114,8 @@ public abstract class BaseProcessor extends AbstractProcessor {
               throw e;
             }
           });
-        } else {
-          if (sources != null) {
+
+          if (sources != null && sources.size() > 0) {
             for (String source : sources) {
               File f = new File(source);
               if (!f.exists()) {
@@ -121,9 +124,35 @@ public abstract class BaseProcessor extends AbstractProcessor {
               if (!f.isFile()) {
                 throw new IOException("Document " + source + " is not a file");
               }
-              handleGen(new FileDoc(f));
+              FileDoc doc = new FileDoc(f);
+              Map<DocGenerator, DocWriter> m = handleGen(doc);
+              state.put(doc, m);
+            }
+            sources.clear();
+          }
+
+          Set<String> processed = new HashSet<>();
+          while (true) {
+            Optional<ElementResolution> opt = resolutions
+              .values()
+              .stream()
+              .filter(res -> res.elt == null && !processed.contains(res.signature))
+              .findFirst();
+            if (opt.isPresent()) {
+              ElementResolution res = opt.get();
+              processed.add(res.signature);
+              res.tryResolve();
+            } else {
+              break;
             }
           }
+        } else {
+          state.forEach((doc, m) -> {
+            m.forEach((gen, w) -> {
+              String content = postProcess(gen.getName(), w.render());
+              write(gen, doc, content);
+            });
+          });
         }
       } catch(Exception e) {
         Element reportedElt = (e instanceof DocGenException) ? ((DocGenException) e).element : null;
@@ -149,14 +178,15 @@ public abstract class BaseProcessor extends AbstractProcessor {
 
   protected abstract Iterable<DocGenerator> generators();
 
-  private final void handleGen(Doc doc) {
+  private Map<DocGenerator, DocWriter> handleGen(Doc doc) {
+    Map<DocGenerator, DocWriter> map = new HashMap<>();
     for (DocGenerator generator : generators()) {
       generator.init(processingEnv);
-      StringWriter buffer = new StringWriter();
-      process(generator, buffer, doc);
-      String content = postProcess(generator.getName(), buffer.toString());
-      write(generator, doc, content);
+      DocWriter writer = new DocWriter();
+      doc.process(generator, writer);
+      map.put(generator, writer);
     }
+    return map;
   }
 
   /**
@@ -251,12 +281,147 @@ public abstract class BaseProcessor extends AbstractProcessor {
 
   private final LinkedList<PackageElement> stack = new LinkedList<>();
 
-  interface Doc {
-    String id();
-    String resolveRelativeFileName(DocGenerator generator);
+  abstract class Doc {
+
+    abstract String id();
+    abstract String resolveRelativeFileName(DocGenerator generator);
+
+    protected final void process(DocGenerator generator, DocWriter writer) {
+
+      if (this instanceof PackageDoc) {
+        PackageElement pkgElt = ((PackageDoc) this).elt;
+        for (PackageElement stackElt : stack) {
+          if (pkgElt.getQualifiedName().equals(stackElt.getQualifiedName())) {
+            throw new DocGenException(stack.peekLast(), "Circular include");
+          }
+        }
+        stack.addLast(pkgElt);
+
+        String pkgSource = helper.readSource(pkgElt);
+        TreePath pkgPath = docTrees.getPath(pkgElt);
+        DocCommentTree docTree = docTrees.getDocCommentTree(pkgPath);
+        DocTreeVisitor<Void, Void> visitor = new DocTreeScanner<Void, Void>() {
+
+          private void copyContent(DocTree node) {
+            int from = (int) docTrees.getSourcePositions().getStartPosition(pkgPath.getCompilationUnit(), docTree, node);
+            int to = (int) docTrees.getSourcePositions().getEndPosition(pkgPath.getCompilationUnit(), docTree, node);
+            writer.append(pkgSource, from, to);
+          }
+
+          @Override
+          public Void visitUnknownBlockTag(UnknownBlockTagTree node, Void v) {
+            writer.append("@").append(node.getTagName()).append(" ");
+            return super.visitUnknownBlockTag(node, v);
+          }
+
+          @Override
+          public Void visitDocComment(DocCommentTree node, Void v) {
+            v = scan(node.getFirstSentence(), v);
+            List<? extends DocTree> body = node.getBody();
+            if (body.size() > 0) {
+              writer.append("\n\n");
+              writer.resetParagraph();
+              v = scan(body, v);
+            }
+            List<? extends DocTree> blockTags = node.getBlockTags();
+            if (blockTags.size() > 0) {
+              writer.append("\n");
+              v = scan(blockTags, v);
+            }
+            return v;
+          }
+
+          @Override
+          public Void visitErroneous(ErroneousTree node, Void v) {
+            return visitText(node, v);
+          }
+
+          @Override
+          public Void visitText(TextTree node, Void v) {
+            String body = node.getBody();
+            Matcher matcher = Helper.LANG_PATTERN.matcher(body);
+            int prev = 0;
+            while (matcher.find()) {
+              writer.append(body, prev, matcher.start());
+              if (matcher.group(1) != null) {
+                // \$lang
+                writer.append("$lang");
+              } else {
+                writer.append(generator.getName());
+              }
+              prev = matcher.end();
+            }
+            writer.append(body, prev, body.length());
+            return super.visitText(node, v);
+          }
+
+          /**
+           * Handles both literal and code. We generate the asciidoc output using {@literal `}.
+           */
+          @Override
+          public Void visitLiteral(LiteralTree node, Void aVoid) {
+            writer.append("`").append(node.getBody().getBody()).append("`");
+            return super.visitLiteral(node, aVoid);
+          }
+
+          @Override
+          public Void visitEntity(EntityTree node, Void aVoid) {
+            writer.append(EntityUtils.unescapeEntity(node.getName().toString()));
+            return super.visitEntity(node, aVoid);
+          }
+
+          @Override
+          public Void visitStartElement(StartElementTree node, Void v) {
+            copyContent(node);
+            return v;
+          }
+
+          @Override
+          public Void visitEndElement(EndElementTree node, Void v) {
+            writer.write("</");
+            writer.append(node.getName());
+            writer.append('>');
+            return v;
+          }
+
+          @Override
+          public Void visitLink(LinkTree node, Void v) {
+            String signature = node.getReference().getSignature();
+            String label = render(node.getLabel()).trim();
+            BaseProcessor.this.visitLink(pkgElt, label, signature, generator, writer);
+            return v;
+          }
+        };
+        docTree.accept(visitor, null);
+        stack.removeLast();
+      } else {
+        FileDoc fileDoc = (FileDoc) this;
+        try {
+          String content = new String(Files.readAllBytes(fileDoc.file.toPath()), StandardCharsets.UTF_8);
+          Matcher matcher = ABC.matcher(content);
+          int prev = 0;
+          while (matcher.find()) {
+            writer.write(content, prev, matcher.start() - prev);
+            String value = matcher.group(1).trim();
+            StringTokenizer tokenizer = new StringTokenizer(value);
+            if (tokenizer.hasMoreTokens()) {
+              String signature = tokenizer.nextToken();
+              String label = value.substring(signature.length()).trim();
+              writer.exec(() -> {
+                BaseProcessor.this.visitLink(null, label, signature, generator, writer);
+              });
+            }
+            prev = matcher.end();
+          }
+          writer.append(content, prev, content.length());
+        } catch (IOException e) {
+          throw new DocGenException(e.getMessage());
+        }
+      }
+    }
   }
 
-  class PackageDoc implements Doc {
+  class PackageDoc extends Doc {
 
     final PackageElement elt;
 
@@ -285,7 +450,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
     }
   }
 
-  class FileDoc implements Doc {
+  class FileDoc extends Doc {
 
     final File file;
 
@@ -304,234 +469,184 @@ public abstract class BaseProcessor extends AbstractProcessor {
     }
   }
 
-  protected final void process(DocGenerator generator, Writer buffer, Doc doc) {
 
-    if (doc instanceof PackageDoc) {
-      PackageElement pkgElt = ((PackageDoc) doc).elt;
-      for (PackageElement stackElt : stack) {
-        if (pkgElt.getQualifiedName().equals(stackElt.getQualifiedName())) {
-          throw new DocGenException(stack.peekLast(), "Circular include");
-        }
+  private static final Pattern ABC = Pattern.compile("\\{@link\\s([^}]+)\\}");
+
+  private void visitLink(PackageElement pkgElt, String label, String signature, DocGenerator generator, DocWriter writer) {
+    ElementResolution res = resolutions.get(signature);
+    if (res == null) {
+      res = new ElementResolution(signature);
+      resolutions.put(signature, res);
+    }
+    LinkProcessing fut = new LinkProcessing(generator, label);
+    res.add(fut);
+    writer.write(() -> {
+      DocWriter ww = fut.writer;
+      if (ww == null) {
+        throw new DocGenException(pkgElt, "Could not resolve " + signature);
       }
-      stack.addLast(pkgElt);
+      return ww;
+    });
+  }
 
-      DocWriter writer = new DocWriter(buffer);
-      String pkgSource = helper.readSource(pkgElt);
-      TreePath pkgPath = docTrees.getPath(pkgElt);
-      DocCommentTree docTree = docTrees.getDocCommentTree(pkgPath);
-      DocTreeVisitor<Void, Void> visitor = new DocTreeScanner<Void, Void>() {
+  /**
+   * The resolution of an element.
+   */
+  class ElementResolution {
 
-        private void copyContent(DocTree node) {
-          int from = (int) docTrees.getSourcePositions().getStartPosition(pkgPath.getCompilationUnit(), docTree, node);
-          int to = (int) docTrees.getSourcePositions().getEndPosition(pkgPath.getCompilationUnit(), docTree, node);
-          writer.append(pkgSource, from, to);
-        }
+    final String signature;
+    private Element elt;
+    private List<LinkProcessing> handlers = new ArrayList<>();
 
-        @Override
-        public Void visitUnknownBlockTag(UnknownBlockTagTree node, Void v) {
-          writer.append("@").append(node.getTagName()).append(" ");
-          return super.visitUnknownBlockTag(node, v);
-        }
+    public ElementResolution(String signature) {
+      this.signature = signature;
+    }
 
-        @Override
-        public Void visitDocComment(DocCommentTree node, Void v) {
-          v = scan(node.getFirstSentence(), v);
-          List<? extends DocTree> body = node.getBody();
-          if (body.size() > 0) {
-            writer.append("\n\n");
-            writer.resetParagraph();
-            v = scan(body, v);
-          }
-          List<? extends DocTree> blockTags = node.getBlockTags();
-          if (blockTags.size() > 0) {
-            writer.append("\n");
-            v = scan(blockTags, v);
-          }
-          return v;
-        }
+    boolean tryResolve() {
+      if (elt == null) {
+        doResolve();
+      }
+      return elt != null;
+    }
 
-        @Override
-        public Void visitErroneous(ErroneousTree node, Void v) {
-          return visitText(node, v);
-        }
+    public boolean equals(Object o) {
+      if (o instanceof ElementResolution) {
+        ElementResolution that = (ElementResolution) o;
+        return signature.equals(that.signature);
+      } else {
+        return false;
+      }
+    }
 
-        @Override
-        public Void visitText(TextTree node, Void v) {
-          String body = node.getBody();
-          Matcher matcher = Helper.LANG_PATTERN.matcher(body);
-          int prev = 0;
-          while (matcher.find()) {
-            writer.append(body, prev, matcher.start());
-            if (matcher.group(1) != null) {
-              // \$lang
-              writer.append("$lang");
-            } else {
-              writer.append(generator.getName());
-            }
-            prev = matcher.end();
-          }
-          writer.append(body, prev, body.length());
-          return super.visitText(node, v);
-        }
+    @Override
+    public int hashCode() {
+      return signature.hashCode();
+    }
 
-        /**
-         * Handles both literal and code. We generate the asciidoc output using {@literal `}.
-         */
-        @Override
-        public Void visitLiteral(LiteralTree node, Void aVoid) {
-          writer.append("`").append(node.getBody().getBody()).append("`");
-          return super.visitLiteral(node, aVoid);
+    private void doResolve() {
+      elt = helper.resolveLink(signature);
+      if (elt != null) {
+        for (LinkProcessing fut : handlers) {
+          fut.handle(elt);
         }
+        handlers.clear();
+      }
+    }
 
-        @Override
-        public Void visitEntity(EntityTree node, Void aVoid) {
-          writer.append(EntityUtils.unescapeEntity(node.getName().toString()));
-          return super.visitEntity(node, aVoid);
-        }
-
-        @Override
-        public Void visitStartElement(StartElementTree node, Void v) {
-          copyContent(node);
-          return v;
-        }
-
-        @Override
-        public Void visitEndElement(EndElementTree node, Void v) {
-          writer.write("</");
-          writer.append(node.getName());
-          writer.append('>');
-          return v;
-        }
-
-        @Override
-        public Void visitLink(LinkTree node, Void v) {
-          String signature = node.getReference().getSignature();
-          String label = render(node.getLabel()).trim();
-          BaseProcessor.this.visitLink(pkgElt, label, signature, generator, writer);
-          return v;
-        }
-      };
-      docTree.accept(visitor, null);
-      stack.removeLast();
-    } else {
-      FileDoc fileDoc = (FileDoc) doc;
-      try {
-        String content = new String(Files.readAllBytes(fileDoc.file.toPath()), StandardCharsets.UTF_8);
-        Matcher matcher = ABC.matcher(content);
-        int prev = 0;
-        while (matcher.find()) {
-          buffer.write(content, prev, matcher.start() - prev);
-          String value = matcher.group(1).trim();
-          StringTokenizer tokenizer = new StringTokenizer(value);
-          if (tokenizer.hasMoreTokens()) {
-            String signature = tokenizer.nextToken();
-            String label = value.substring(signature.length()).trim();
-            BaseProcessor.this.visitLink(null, label, signature, generator, new DocWriter(buffer));
-          }
-          prev = matcher.end();
-        }
-        buffer.append(content, prev, content.length());
-      } catch (IOException e) {
-        throw new DocGenException(e.getMessage());
+    private void add(LinkProcessing fut) {
+      if (elt != null) {
+        fut.handle(elt);
+      } else {
+        handlers.add(fut);
       }
     }
   }
 
-  private static final Pattern ABC = Pattern.compile("\\{@link\\s([^}]+)\\}");
-  private static final Pattern DEF = Pattern.compile("\\s");
+  class LinkProcessing {
 
-  private void visitLink(PackageElement pkgElt, String label, String signature, DocGenerator generator, DocWriter writer) {
-    Element resolvedElt = helper.resolveLink(signature);
-    if (resolvedElt == null) {
-      throw new DocGenException(pkgElt, "Could not resolve " + signature);
-    } else if (resolvedElt instanceof PackageElement) {
-      PackageElement includedElt = (PackageElement) resolvedElt;
-      if (includedElt.getAnnotation(Document.class) == null) {
-        process(generator, writer, new PackageDoc(includedElt));
+    final DocGenerator generator;
+    final String label;
+    private DocWriter writer;
+
+    public LinkProcessing(DocGenerator generator, String label) {
+      this.generator = generator;
+      this.label = label;
+    }
+
+    void handle(Element elt) {
+      writer = new DocWriter();
+      if (elt instanceof PackageElement) {
+        PackageElement includedElt = (PackageElement) elt;
+        if (includedElt.getAnnotation(Document.class) == null) {
+          new PackageDoc(includedElt).process(generator, writer);
+        } else {
+          String link = resolveLinkToPackageDoc((PackageElement) elt);
+          writer.append(link);
+        }
       } else {
-        String link = resolveLinkToPackageDoc((PackageElement) resolvedElt);
-        writer.append(link);
-      }
-    } else {
-      if (helper.isExample(resolvedElt)) {
-        String source = helper.readSource(resolvedElt);
-        switch (resolvedElt.getKind()) {
-          case CONSTRUCTOR:
-          case METHOD:
-            // Check whether or not the fragment must be translated
-            String fragment;
-            if (helper.hasToBeTranslated(resolvedElt)) {
-              // Invoke the custom renderer, this may should the translation to the expected language.
-              fragment = generator.renderSource((ExecutableElement) resolvedElt, source);
-            } else {
-              // Do not call the custom rendering process, just use the default / java one.
+        if (helper.isExample(elt)) {
+          String source = helper.readSource(elt);
+          switch (elt.getKind()) {
+            case CONSTRUCTOR:
+            case METHOD:
+              // Check whether or not the fragment must be translated
+              String fragment;
+              if (helper.hasToBeTranslated(elt)) {
+                // Invoke the custom renderer, this may should the translation to the expected language.
+                fragment = generator.renderSource((ExecutableElement) elt, source);
+              } else {
+                // Do not call the custom rendering process, just use the default / java one.
+                JavaDocGenerator javaGen = new JavaDocGenerator();
+                javaGen.init(processingEnv);
+                fragment = javaGen.renderSource((ExecutableElement) elt, source);
+              }
+              if (fragment != null) {
+                writer.literalMode();
+                writer.append(fragment);
+                writer.commentMode();
+              }
+              return;
+            case CLASS:
+            case INTERFACE:
+            case ENUM:
+            case ANNOTATION_TYPE:
+              TypeElement typeElt = (TypeElement) elt;
               JavaDocGenerator javaGen = new JavaDocGenerator();
               javaGen.init(processingEnv);
-              fragment = javaGen.renderSource((ExecutableElement) resolvedElt, source);
-            }
-            if (fragment != null) {
-              writer.literalMode();
-              writer.append(fragment);
-              writer.commentMode();
-            }
-            return;
+              fragment = javaGen.renderSource(typeElt, source);
+              if (fragment != null) {
+                writer.literalMode();
+                writer.append(fragment);
+                writer.commentMode();
+              }
+              return;
+            default:
+              throw new UnsupportedOperationException("unsupported element: " + elt.getKind());
+          }
+        }
+        String link;
+        switch (elt.getKind()) {
           case CLASS:
           case INTERFACE:
-          case ENUM:
           case ANNOTATION_TYPE:
-            TypeElement typeElt = (TypeElement) resolvedElt;
-            JavaDocGenerator javaGen = new JavaDocGenerator();
-            javaGen.init(processingEnv);
-            fragment = javaGen.renderSource(typeElt, source);
-            if (fragment != null) {
-              writer.literalMode();
-              writer.append(fragment);
-              writer.commentMode();
-            }
-            return;
+          case ENUM: {
+            TypeElement typeElt = (TypeElement) elt;
+            link = generator.resolveTypeLink(typeElt, resolveCoordinate(typeElt));
+            break;
+          }
+          case METHOD: {
+            ExecutableElement methodElt = (ExecutableElement) elt;
+            TypeElement typeElt = (TypeElement) methodElt.getEnclosingElement();
+            link = generator.resolveMethodLink(methodElt, resolveCoordinate(typeElt));
+            break;
+          }
+          case CONSTRUCTOR: {
+            ExecutableElement constructorElt = (ExecutableElement) elt;
+            TypeElement typeElt = (TypeElement) constructorElt.getEnclosingElement();
+            link = generator.resolveConstructorLink(constructorElt, resolveCoordinate(typeElt));
+            break;
+          }
+          case FIELD:
+          case ENUM_CONSTANT: {
+            VariableElement variableElt = (VariableElement) elt;
+            TypeElement typeElt = (TypeElement) variableElt.getEnclosingElement();
+            link = generator.resolveFieldLink(variableElt, resolveCoordinate(typeElt));
+            break;
+          }
           default:
-            throw new UnsupportedOperationException("unsupported element: " + resolvedElt.getKind());
+            throw new UnsupportedOperationException("Not yet implemented " + elt + " with kind " + elt.getKind());
         }
-      }
-      String link;
-      switch (resolvedElt.getKind()) {
-        case CLASS:
-        case INTERFACE:
-        case ANNOTATION_TYPE:
-        case ENUM: {
-          TypeElement typeElt = (TypeElement) resolvedElt;
-          link = generator.resolveTypeLink(typeElt, resolveCoordinate(typeElt));
-          break;
+        String s;
+        if (label.length() == 0) {
+          s = resolveLabel(generator, elt);
+        } else {
+          s = label;
         }
-        case METHOD: {
-          ExecutableElement methodElt = (ExecutableElement) resolvedElt;
-          TypeElement typeElt = (TypeElement) methodElt.getEnclosingElement();
-          link = generator.resolveMethodLink(methodElt, resolveCoordinate(typeElt));
-          break;
+        if (link != null) {
+          writer.append("`link:").append(link).append("[").append(s).append("]`");
+        } else {
+          writer.append("`").append(s).append("`");
         }
-        case CONSTRUCTOR: {
-          ExecutableElement constructorElt = (ExecutableElement) resolvedElt;
-          TypeElement typeElt = (TypeElement) constructorElt.getEnclosingElement();
-          link = generator.resolveConstructorLink(constructorElt, resolveCoordinate(typeElt));
-          break;
-        }
-        case FIELD:
-        case ENUM_CONSTANT: {
-          VariableElement variableElt = (VariableElement) resolvedElt;
-          TypeElement typeElt = (TypeElement) variableElt.getEnclosingElement();
-          link = generator.resolveFieldLink(variableElt, resolveCoordinate(typeElt));
-          break;
-        }
-        default:
-          throw new UnsupportedOperationException("Not yet implemented " + resolvedElt + " with kind " + resolvedElt.getKind());
-      }
-      if (label.length() == 0) {
-        label = resolveLabel(generator, resolvedElt);
-      }
-      if (link != null) {
-        writer.append("`link:").append(link).append("[").append(label).append("]`");
-      } else {
-        writer.append("`").append(label).append("`");
       }
     }
   }

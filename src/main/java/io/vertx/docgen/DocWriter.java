@@ -3,21 +3,56 @@ package io.vertx.docgen;
 import java.io.IOException;
 import java.io.Writer;
 import java.lang.reflect.UndeclaredThrowableException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 class DocWriter extends Writer {
 
-  final Writer delegate;
+  private final StringBuilder delegate;
+  private final List<Object> chunks = new ArrayList<>();
   private int status;
   private boolean literal;
 
-  DocWriter(Writer delegate) {
-    this.delegate = delegate;
+  DocWriter() {
+    this.delegate = new StringBuilder();
     this.status = 0;
     this.literal = false;
+  }
+
+  String render() {
+    StringBuilder buffer = new StringBuilder();
+    render(buffer);
+    return buffer.toString();
+  }
+
+  private void render(StringBuilder buffer) {
+    chunks.forEach(chunk -> {
+      if (chunk instanceof Supplier) {
+        Supplier<DocWriter> consumer = (Supplier<DocWriter>) chunk;
+        DocWriter writer = consumer.get();
+        writer.render(buffer);
+      } else {
+        buffer.append(chunk);
+      }
+    });
+    buffer.append(delegate);
+    delegate.setLength(0);
+    chunks.clear();
+  }
+
+  void exec(Runnable r) {
+    int st = status;
+    boolean bl = literal;
+    status = 0;
+    literal = false;
+    r.run();
+    status = st;
+    literal = bl;
   }
 
   void resetParagraph() {
@@ -38,6 +73,15 @@ class DocWriter extends Writer {
    */
   void commentMode() {
     literal = false;
+  }
+
+  void write(Supplier<DocWriter> future) {
+    if (delegate.length() > 0) {
+      String s = delegate.toString();
+      delegate.setLength(0);
+      chunks.add(s);
+    }
+    chunks.add(future);
   }
 
   @Override
@@ -105,37 +149,33 @@ class DocWriter extends Writer {
 
   @Override
   public void write(char[] cbuf, int off, int len) {
-    try {
-      if (literal) {
-        while (off < len) {
-          delegate.write(cbuf[off++]);
-        }
-      } else {
-        while (off < len) {
-          char c = cbuf[off++];
-          switch (c) {
-            case '\n':
-              status = 1;
-              delegate.write(c);
-              break;
-            case ' ':
-              if (status == 1) {
-                status = 2;
-              } else {
-                delegate.write(c);
-              }
-              break;
-            default:
-              delegate.write(c);
-              if (status == 1) {
-                status = 2;
-              }
-              break;
-          }
+    if (literal) {
+      while (off < len) {
+        delegate.append(cbuf[off++]);
+      }
+    } else {
+      while (off < len) {
+        char c = cbuf[off++];
+        switch (c) {
+          case '\n':
+            status = 1;
+            delegate.append(c);
+            break;
+          case ' ':
+            if (status == 1) {
+              status = 2;
+            } else {
+              delegate.append(c);
+            }
+            break;
+          default:
+            delegate.append(c);
+            if (status == 1) {
+              status = 2;
+            }
+            break;
         }
       }
-    } catch (IOException e) {
-      throw new UndeclaredThrowableException(e);
     }
   }
 

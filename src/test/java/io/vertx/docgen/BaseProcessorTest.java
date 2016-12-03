@@ -47,7 +47,7 @@ public class BaseProcessorTest {
 
   @Test
   public void testIncludeCircular() throws Exception {
-    assertTrue(failDoc("io.vertx.test.includecircular").containsKey("io.vertx.test.includecircular.sub2"));
+    assertTrue(failDoc("io.vertx.test.includecircular").containsKey("io.vertx.test.includecircular.sub1"));
   }
 
   @Test
@@ -668,7 +668,7 @@ public class BaseProcessorTest {
             Element elt = processingEnv.getElementUtils().getTypeElement("gen.GeneratedClass");
             JavaFileObject src = filer.createSourceFile("io.vertx.test.gen.GeneratedClass", elt);
             try (Writer writer = src.openWriter()) {
-              writer.append("package io.vertx.test.gen;\npublic class AnotherClass {\n}");
+              writer.append("package io.vertx.test.gen;\npublic class GeneratedClass {\n}");
             }
           } catch (Exception e) {
             e.printStackTrace();
