@@ -117,16 +117,44 @@ public abstract class BaseProcessor extends AbstractProcessor {
 
           if (sources != null && sources.size() > 0) {
             for (String source : sources) {
+
+              // Handle wildcards
+              List<File> files = new ArrayList<>();
               File f = new File(source);
               if (!f.exists()) {
-                throw new FileNotFoundException("Cannot process document " + source);
+                if (f.getName().contains("*")) {
+                  StringBuilder sb = new StringBuilder();
+                  for (char c : f.getName().toCharArray()) {
+                    if (c == '*') {
+                      sb.append(".*");
+                    } else {
+                      sb.append(Matcher.quoteReplacement(Character.toString(c)));
+                    }
+                  }
+                  Pattern p = Pattern.compile(sb.toString());
+                  File parentFile = f.getParentFile();
+                  File[] children = parentFile.listFiles();
+                  if (children != null) {
+                    for (File child : children) {
+                      if (p.matcher(child.getName()).matches()) {
+                        files.add(child);
+                      }
+                    }
+                  }
+                } else {
+                  throw new FileNotFoundException("Cannot process document " + source);
+                }
+              } else {
+                files.add(f);
               }
-              if (!f.isFile()) {
-                throw new IOException("Document " + source + " is not a file");
+              for (File file : files) {
+                if (!file.isFile()) {
+                  throw new IOException("Document " + file.getAbsolutePath() + " is not a file");
+                }
+                FileDoc doc = new FileDoc(file);
+                Map<DocGenerator, DocWriter> m = handleGen(doc);
+                state.put(doc, m);
               }
-              FileDoc doc = new FileDoc(f);
-              Map<DocGenerator, DocWriter> m = handleGen(doc);
-              state.put(doc, m);
             }
             sources.clear();
           }
