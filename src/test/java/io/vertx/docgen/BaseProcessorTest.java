@@ -602,17 +602,17 @@ public class BaseProcessorTest {
 
   @Test
   public void testDocFile() throws Exception {
-    assertEquals("the_content", assertDocFile("docs/simple.adoc"));
+    assertEquals("the_content", assertDocFile("docs/simple.adoc").getDoc("simple.adoc"));
   }
 
   @Test
   public void testDocFileLink() throws Exception {
-    assertEquals("<before>`link:type[TheClass]`<after>", assertDocFile("docs/link.adoc"));
+    assertEquals("<before>`link:type[TheClass]`<after>", assertDocFile("docs/link.adoc").getDoc("link.adoc"));
   }
 
   @Test
   public void testDocFileLinkWithLabel() throws Exception {
-    assertEquals("<before>`link:type[the label value]`<after>", assertDocFile("docs/linkwithlabel.adoc"));
+    assertEquals("<before>`link:type[the label value]`<after>", assertDocFile("docs/linkwithlabel.adoc").getDoc("linkwithlabel.adoc"));
   }
 
   @Test
@@ -627,7 +627,7 @@ public class BaseProcessorTest {
         "  }\n" +
         "}\n" +
         "map.put(\"abc\", \"def\");\n" +
-        "map.get(\"abc\"); // Beyond last statement<after>", assertDocFile("docs/include.adoc"));
+        "map.get(\"abc\"); // Beyond last statement<after>", assertDocFile("docs/include.adoc").getDoc("include.adoc"));
   }
 
   @Test
@@ -649,6 +649,14 @@ public class BaseProcessorTest {
     Compiler<TestGenProcessor> compiler = buildCompiler(new TestGenProcessor(),  "io.vertx.test.file");
     compiler.setOption("docgen.source", new File(".").getAbsolutePath());
     compiler.failCompile();
+  }
+
+  @Test
+  public void testDocDir() throws Exception {
+    TestGenProcessor processor = assertDocFile("docs/dir");
+    assertEquals("foo_content", processor.getDoc("foo.adoc"));
+    assertEquals("bar_content", processor.getDoc("bar.adoc"));
+    assertEquals("daa_content", processor.getDoc("juu/daa.adoc"));
   }
 
   @Test
@@ -691,12 +699,12 @@ public class BaseProcessorTest {
     return new File(resource.toURI());
   }
 
-  private String assertDocFile(String relativeName) throws Exception {
+  private TestGenProcessor assertDocFile(String relativeName) throws Exception {
     File src = docFile(relativeName);
     Compiler<TestGenProcessor> compiler = buildCompiler(new TestGenProcessor(),  "io.vertx.test.file");
     compiler.setOption("docgen.source", src.getAbsolutePath());
     compiler.assertCompile();
-    return compiler.processor.getDoc(src.getName());
+    return compiler.processor;
   }
 
   private Map<String, String> failDoc(String pkg) throws Exception {

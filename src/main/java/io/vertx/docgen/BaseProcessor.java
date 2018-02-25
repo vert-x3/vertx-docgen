@@ -19,6 +19,7 @@ import java.io.*;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
@@ -148,12 +149,22 @@ public abstract class BaseProcessor extends AbstractProcessor {
                 files.add(f);
               }
               for (File file : files) {
-                if (!file.isFile()) {
-                  throw new IOException("Document " + file.getAbsolutePath() + " is not a file");
+                if (file.isFile()) {
+                  FileDoc fileDoc = new FileDoc(file, file.getName());
+                  Map<DocGenerator, DocWriter> m = handleGen(fileDoc);
+                  state.put(fileDoc, m);
+                } else if (file.isDirectory()) {
+                  Files.walk(file.toPath())
+                    .map(Path::toFile)
+                    .filter(File::isFile).forEach(docFile -> {
+                    String relativePath = file.toPath().relativize(docFile.toPath()).toString();
+                    FileDoc fileDoc = new FileDoc(docFile, relativePath);
+                    Map<DocGenerator, DocWriter> m = handleGen(fileDoc);
+                    state.put(fileDoc, m);
+                  });
+                } else {
+                  throw new IOException("Document " + file.getAbsolutePath() + " is not a file nor a dir");
                 }
-                FileDoc doc = new FileDoc(file);
-                Map<DocGenerator, DocWriter> m = handleGen(doc);
-                state.put(doc, m);
               }
             }
             sources.clear();
@@ -481,19 +492,21 @@ public abstract class BaseProcessor extends AbstractProcessor {
   class FileDoc extends Doc {
 
     final File file;
+    final String relativePath;
 
-    FileDoc(File file) {
+    FileDoc(File file, String relativePath) {
       this.file = file;
+      this.relativePath = relativePath;
     }
 
     @Override
     public String id() {
-      return file.getName();
+      return relativePath;
     }
 
     @Override
     public String resolveRelativeFileName(DocGenerator generator) {
-      return file.getName();
+      return relativePath;
     }
   }
 
