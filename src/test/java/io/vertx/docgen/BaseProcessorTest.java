@@ -607,7 +607,13 @@ public class BaseProcessorTest {
 
   @Test
   public void testDocFileLink() throws Exception {
-    assertEquals("<before>`link:type[TheClass]`<after>", assertDocFile("docs/link.adoc").getDoc("link.adoc"));
+    assertEquals(
+      "<1>`link:type[TheClass]`</1>\n" +
+      "<2>`link:method[m1]`</2>\n" +
+      "<3>`link:method[m2]`</3>\n" +
+      "<4>`link:method[m3]`</4>\n" +
+      "<5>`link:method[the label value]`</5>",
+      assertDocFile("docs/link.adoc").getDoc("link.adoc"));
   }
 
   @Test

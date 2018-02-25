@@ -1,1 +1,5 @@
-<before>{@link io.vertx.test.file.TheClass}<after>
+<1>{@link io.vertx.test.file.TheClass}</1>
+<2>{@link io.vertx.test.file.TheClass#m1()}</2>
+<3>{@link io.vertx.test.file.TheClass#m2(java.lang.String)}</3>
+<4>{@link io.vertx.test.file.TheClass#m3(java.lang.String, boolean)}</4>
+<5>{@link io.vertx.test.file.TheClass#m3(java.lang.String, boolean) the label value}</5>

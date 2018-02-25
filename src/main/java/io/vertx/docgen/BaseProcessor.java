@@ -437,20 +437,20 @@ public abstract class BaseProcessor extends AbstractProcessor {
         FileDoc fileDoc = (FileDoc) this;
         try {
           String content = new String(Files.readAllBytes(fileDoc.file.toPath()), StandardCharsets.UTF_8);
-          Matcher matcher = ABC.matcher(content);
+          Matcher linkMatcher = LINK_PATTERN.matcher(content);
           int prev = 0;
-          while (matcher.find()) {
-            writer.write(content, prev, matcher.start() - prev);
-            String value = matcher.group(1).trim();
-            StringTokenizer tokenizer = new StringTokenizer(value);
-            if (tokenizer.hasMoreTokens()) {
-              String signature = tokenizer.nextToken();
-              String label = value.substring(signature.length()).trim();
+          while (linkMatcher.find()) {
+            writer.write(content, prev, linkMatcher.start() - prev);
+            String value = linkMatcher.group(1).trim();
+            Matcher methodLinkMatcher = METHOD_LINK_PATTERN.matcher(value);
+            if (methodLinkMatcher.find()) {
+              String signature = value.substring(0, methodLinkMatcher.end());
+              String label = value.substring(methodLinkMatcher.end()).trim();
               writer.exec(() -> {
                 BaseProcessor.this.visitLink(null, label, signature, generator, writer);
               });
             }
-            prev = matcher.end();
+            prev = linkMatcher.end();
           }
           writer.append(content, prev, content.length());
         } catch (IOException e) {
@@ -511,7 +511,8 @@ public abstract class BaseProcessor extends AbstractProcessor {
   }
 
 
-  private static final Pattern ABC = Pattern.compile("\\{@link\\s([^}]+)\\}");
+  private static final Pattern LINK_PATTERN = Pattern.compile("\\{@link\\s([^}]+)\\}");
+  private static final Pattern METHOD_LINK_PATTERN = Pattern.compile("^([$_\\w]+\\.)*[$_\\w]+" + "(?:#[$_\\w]+(?:\\([^)]*)\\))?");
 
   private void visitLink(PackageElement pkgElt, String label, String signature, DocGenerator generator, DocWriter writer) {
     ElementResolution res = resolutions.get(signature);
