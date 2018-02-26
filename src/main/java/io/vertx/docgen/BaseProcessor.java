@@ -378,19 +378,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
           @Override
           public Void visitText(TextTree node, Void v) {
             String body = node.getBody();
-            Matcher matcher = Helper.LANG_PATTERN.matcher(body);
-            int prev = 0;
-            while (matcher.find()) {
-              writer.append(body, prev, matcher.start());
-              if (matcher.group(1) != null) {
-                // \$lang
-                writer.append("$lang");
-              } else {
-                writer.append(generator.getName());
-              }
-              prev = matcher.end();
-            }
-            writer.append(body, prev, body.length());
+            helper.filterLang(body, generator.getName(), writer);
             return super.visitText(node, v);
           }
 
@@ -437,6 +425,9 @@ public abstract class BaseProcessor extends AbstractProcessor {
         FileDoc fileDoc = (FileDoc) this;
         try {
           String content = new String(Files.readAllBytes(fileDoc.file.toPath()), StandardCharsets.UTF_8);
+          StringBuilder intermediate = new StringBuilder(content.length());
+          helper.filterLang(content, generator.getName(), intermediate);
+          content = intermediate.toString();
           Matcher linkMatcher = LINK_PATTERN.matcher(content);
           int prev = 0;
           while (linkMatcher.find()) {

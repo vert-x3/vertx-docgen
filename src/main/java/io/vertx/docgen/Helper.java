@@ -20,6 +20,7 @@ import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import java.io.IOException;
 import java.io.Reader;
+import java.lang.reflect.UndeclaredThrowableException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Predicate;
@@ -260,4 +261,25 @@ class Helper {
       throw new UnsupportedOperationException("todo " + mirror + " " + mirror.getKind());
     }
   }
+
+  public void filterLang(CharSequence csq, String lang, Appendable dst) {
+    try {
+      Matcher matcher = Helper.LANG_PATTERN.matcher(csq);
+      int prev = 0;
+      while (matcher.find()) {
+        dst.append(csq, prev, matcher.start());
+        if (matcher.group(1) != null) {
+          // \$lang
+          dst.append("$lang");
+        } else {
+          dst.append(lang);
+        }
+        prev = matcher.end();
+      }
+      dst.append(csq, prev, csq.length());
+    } catch (IOException e) {
+      throw new UndeclaredThrowableException(e);
+    }
+  }
+
 }

@@ -367,7 +367,6 @@ public class BaseProcessorTest {
     assertEquals("The $lang is : java", assertDoc("io.vertx.test.lang"));
   }
 
-
   @Test
   public void testEntities() throws Exception {
     final String doc = assertDoc("io.vertx.test.entities");
@@ -619,6 +618,11 @@ public class BaseProcessorTest {
   @Test
   public void testDocFileLinkWithLabel() throws Exception {
     assertEquals("<before>`link:type[the label value]`<after>", assertDocFile("docs/linkwithlabel.adoc").getDoc("linkwithlabel.adoc"));
+  }
+
+  @Test
+  public void testDocFileLinkWithLang() throws Exception {
+    assertEquals("The $lang is : java", assertDocFile("docs/lang.adoc").getDoc("lang.adoc"));
   }
 
   @Test
