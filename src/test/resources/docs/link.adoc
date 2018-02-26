@@ -1,5 +1,7 @@
 <1>{@link io.vertx.test.file.TheClass}</1>
-<2>{@link io.vertx.test.file.TheClass#m1()}</2>
-<3>{@link io.vertx.test.file.TheClass#m2(java.lang.String)}</3>
-<4>{@link io.vertx.test.file.TheClass#m3(java.lang.String, boolean)}</4>
-<5>{@link io.vertx.test.file.TheClass#m3(java.lang.String, boolean) the label value}</5>
+<2>{@link io.vertx.test.file.TheClass#m1}</2>
+<3>{@link io.vertx.test.file.TheClass#m1 the label value}</3>
+<4>{@link io.vertx.test.file.TheClass#m1()}</4>
+<5>{@link io.vertx.test.file.TheClass#m2(java.lang.String)}</5>
+<6>{@link io.vertx.test.file.TheClass#m3(java.lang.String, boolean)}</6>
+<7>{@link io.vertx.test.file.TheClass#m3(java.lang.String, boolean) the label value}</7>

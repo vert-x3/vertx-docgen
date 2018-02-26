@@ -609,9 +609,11 @@ public class BaseProcessorTest {
     assertEquals(
       "<1>`link:type[TheClass]`</1>\n" +
       "<2>`link:method[m1]`</2>\n" +
-      "<3>`link:method[m2]`</3>\n" +
-      "<4>`link:method[m3]`</4>\n" +
-      "<5>`link:method[the label value]`</5>",
+      "<3>`link:method[the label value]`</3>\n" +
+      "<4>`link:method[m1]`</4>\n" +
+      "<5>`link:method[m2]`</5>\n" +
+      "<6>`link:method[m3]`</6>\n" +
+      "<7>`link:method[the label value]`</7>",
       assertDocFile("docs/link.adoc").getDoc("link.adoc"));
   }
 

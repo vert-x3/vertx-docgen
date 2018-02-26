@@ -503,7 +503,12 @@ public abstract class BaseProcessor extends AbstractProcessor {
 
 
   private static final Pattern LINK_PATTERN = Pattern.compile("\\{@link\\s([^}]+)\\}");
-  private static final Pattern METHOD_LINK_PATTERN = Pattern.compile("^([$_\\w]+\\.)*[$_\\w]+" + "(?:#[$_\\w]+(?:\\([^)]*)\\))?");
+  private static final Pattern METHOD_LINK_PATTERN = Pattern.compile(
+    "^([$_\\w]+\\.)*[$_\\w]+" +
+      "(?:" +
+      "#[$_\\w]+" +
+      "(?:(?:\\([^)]*)\\)|$|(?= ))" +
+      ")?");
 
   private void visitLink(PackageElement pkgElt, String label, String signature, DocGenerator generator, DocWriter writer) {
     ElementResolution res = resolutions.get(signature);
