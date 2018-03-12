@@ -706,8 +706,8 @@ public abstract class BaseProcessor extends AbstractProcessor {
           dir = new File(dir, relativeName.substring(0, i));
           relativeName = relativeName.substring(i + 1);
         }
-        ensureDir(dir);
         File file = new File(dir, relativeName);
+        ensureDir(file.getParentFile());
         try (FileWriter writer = new FileWriter(file)) {
           writer.write(content);
         }
