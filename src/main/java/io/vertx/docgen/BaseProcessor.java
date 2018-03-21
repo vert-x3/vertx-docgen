@@ -101,6 +101,12 @@ public abstract class BaseProcessor extends AbstractProcessor {
 
   @Override
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+    StackTraceElement[] trace = Thread.currentThread().getStackTrace();
+    for (StackTraceElement elt : trace) {
+      if (elt.getClassName().startsWith("org.jetbrains")) {
+        return true;
+      }
+    }
     if (failures.isEmpty()) {
       try {
         if (!roundEnv.processingOver()) {
