@@ -31,11 +31,15 @@ import java.util.regex.Pattern;
  */
 public abstract class BaseProcessor extends AbstractProcessor {
 
+  private static final String DOCGEN_OUTPUT = "docgen.output", DOCGEN_EXTENSION = "docgen.extension",
+    DOCGEN_SOURCE = "docgen.source", DOCGEN_SYNTAX = "docgen.syntax";
+
   protected DocTrees docTrees;
   protected Helper helper;
   protected List<String> sources;
   protected Set<PostProcessor> postProcessors = new LinkedHashSet<>();
   protected Map<String, ElementResolution> resolutions = new HashMap<>();
+  protected Syntax syntax;
   Map<String, String> failures = new HashMap<>();
 
   @Override
@@ -45,7 +49,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
 
   @Override
   public Set<String> getSupportedOptions() {
-    return new HashSet<>(Arrays.asList("docgen.output", "docgen.extension", "docgen.source"));
+    return new HashSet<>(Arrays.asList(DOCGEN_OUTPUT, DOCGEN_EXTENSION, DOCGEN_SOURCE));
   }
 
   @Override
@@ -75,12 +79,14 @@ public abstract class BaseProcessor extends AbstractProcessor {
   @Override
   public synchronized void init(ProcessingEnvironment processingEnv) {
     super.init(processingEnv);
-    String sourceOpt = processingEnv.getOptions().get("docgen.source");
+    String sourceOpt = processingEnv.getOptions().get(DOCGEN_SOURCE);
     if (sourceOpt != null) {
       sources = new ArrayList<>(Arrays.asList(sourceOpt.split("\\s*,\\s*")));
     }
     docTrees = DocTrees.instance(processingEnv);
     helper = new Helper(processingEnv);
+    String syntaxOpt = processingEnv.getOptions().get(DOCGEN_SYNTAX);
+    this.syntax = "markdown".equals(syntaxOpt) ? Syntax.MARKDOWN : Syntax.ASCIIDOC;
     registerPostProcessor(new LanguageFilterPostProcessor());
   }
 
@@ -239,7 +245,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
    * when absent.
    */
   protected String getExtension() {
-    String extension = processingEnv.getOptions().get("docgen.extension");
+    String extension = processingEnv.getOptions().get(DOCGEN_EXTENSION);
     if (extension != null) {
       return extension;
     }
@@ -687,7 +693,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
           s = label;
         }
         if (link != null) {
-          writer.append("`link:").append(link).append("[").append(s).append("]`");
+          syntax.writeLink(link, s, writer);
         } else {
           writer.append("`").append(s).append("`");
         }
@@ -702,7 +708,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
   }
 
   protected void write(DocGenerator generator, Doc doc, String content) {
-    String outputOpt = processingEnv.getOptions().get("docgen.output");
+    String outputOpt = processingEnv.getOptions().get(DOCGEN_OUTPUT);
     if (outputOpt != null) {
       outputOpt = outputOpt.replace("$lang", generator.getName());
       String relativeName = doc.resolveRelativeFileName(generator);

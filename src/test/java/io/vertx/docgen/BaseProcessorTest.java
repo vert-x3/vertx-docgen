@@ -53,36 +53,43 @@ public class BaseProcessorTest {
   @Test
   public void testLinkToClass() throws Exception {
     assertEquals("`link:type[TheClass]`", assertDoc("io.vertx.test.linktoclass"));
+    assertEquals("[`TheClass`](type)", assertMarkdownDoc("io.vertx.test.linktoclass"));
   }
 
   @Test
   public void testLinkToAnnotation() throws Exception {
     assertEquals("`link:annotation[@TheAnnotation]`", assertDoc("io.vertx.test.linktoannotation"));
+    assertEquals("[`@TheAnnotation`](annotation)", assertMarkdownDoc("io.vertx.test.linktoannotation"));
   }
 
   @Test
   public void testLinkToEnum() throws Exception {
     assertEquals("`link:enum[TheEnum]`", assertDoc("io.vertx.test.linktoenum"));
+    assertEquals("[`TheEnum`](enum)", assertMarkdownDoc("io.vertx.test.linktoenum"));
   }
 
   @Test
   public void testLinkToField() throws Exception {
     assertEquals("`link:field[f1]`", assertDoc("io.vertx.test.linktofield"));
+    assertEquals("[`f1`](field)", assertMarkdownDoc("io.vertx.test.linktofield"));
   }
 
   @Test
   public void testLinkToEnumConstant() throws Exception {
     assertEquals("`link:enumConstant[THE_CONSTANT]`", assertDoc("io.vertx.test.linktoenumconstant"));
+    assertEquals("[`THE_CONSTANT`](enumConstant)", assertMarkdownDoc("io.vertx.test.linktoenumconstant"));
   }
 
   @Test
   public void testLinkToStaticField() throws Exception {
     assertEquals("`link:field[TheClass.f1]`", assertDoc("io.vertx.test.linktostaticfield"));
+    assertEquals("[`TheClass.f1`](field)", assertMarkdownDoc("io.vertx.test.linktostaticfield"));
   }
 
   @Test
   public void testLinkToMethodMember() throws Exception {
     assertEquals("`link:method[m]`", assertDoc("io.vertx.test.linktomethodmember"));
+    assertEquals("[`m`](method)", assertMarkdownDoc("io.vertx.test.linktomethodmember"));
   }
 
   @Test
@@ -112,12 +119,37 @@ public class BaseProcessorTest {
         "`link:method[m17]`\n" +
         "`link:method[m18]`" +
         "", assertDoc("io.vertx.test.linktomethod"));
+    assertEquals(
+      "[`m1`](method)\n" +
+        "[`m1`](method)\n" +
+        "[`m2`](method)\n" +
+        "[`m2`](method)\n" +
+        "[`m2`](method)\n" +
+        "[`m3`](method)\n" +
+        "[`m3`](method)\n" +
+        "[`m3`](method)\n" +
+        "[`m4`](method)\n" +
+        "[`m5`](method)\n" +
+        "[`m6`](method)\n" +
+        "[`m7`](method)\n" +
+        "[`m8`](method)\n" +
+        "[`m9`](method)\n" +
+        "[`m10`](method)\n" +
+        "[`m11`](method)\n" +
+        "[`m12`](method)\n" +
+        "[`m13`](method)\n" +
+        "[`m14`](method)\n" +
+        "[`m15`](method)\n" +
+        "[`m16`](method)\n" +
+        "[`m17`](method)\n" +
+        "[`m18`](method)" +
+        "", assertMarkdownDoc("io.vertx.test.linktomethod"));
   }
 
   @Test
   public void testLinkToStaticMethod() throws Exception {
-    assertEquals(
-        "`link:method[TheClass.m]`", assertDoc("io.vertx.test.linktostaticmethod"));
+    assertEquals("`link:method[TheClass.m]`", assertDoc("io.vertx.test.linktostaticmethod"));
+    assertEquals("[`TheClass.m`](method)", assertMarkdownDoc("io.vertx.test.linktostaticmethod"));
   }
 
   @Test
@@ -128,6 +160,12 @@ public class BaseProcessorTest {
         "`link:method[m3]`\n" +
         "`link:method[m4]`" +
         "", assertDoc("io.vertx.test.linktomethodwithsimpletypename"));
+    assertEquals(
+      "[`m1`](method)\n" +
+        "[`m2`](method)\n" +
+        "[`m3`](method)\n" +
+        "[`m4`](method)" +
+        "", assertMarkdownDoc("io.vertx.test.linktomethodwithsimpletypename"));
   }
 
   @Test
@@ -138,21 +176,25 @@ public class BaseProcessorTest {
   @Test
   public void testLinkToConstructor() throws Exception {
     assertEquals("`link:constructor[<init>]`\n`link:constructor[<init>]`", assertDoc("io.vertx.test.linktoconstructor"));
+    assertEquals("[`<init>`](constructor)\n[`<init>`](constructor)", assertMarkdownDoc("io.vertx.test.linktoconstructor"));
   }
 
   @Test
   public void testLinkToSameNameFieldAndMethod() throws Exception {
     assertEquals("`link:field[member]`\n`link:method[member]`", assertDoc("io.vertx.test.linktosamenamefieldandmethod"));
+    assertEquals("[`member`](field)\n[`member`](method)", assertMarkdownDoc("io.vertx.test.linktosamenamefieldandmethod"));
   }
 
   @Test
   public void testLinkToSameNameConstructorAndMethod() throws Exception {
     assertEquals("`link:constructor[<init>]`\n`link:constructor[<init>]`\n`link:constructor[<init>]`", assertDoc("io.vertx.test.linktosamenameconstructorandmethod"));
+    assertEquals("[`<init>`](constructor)\n[`<init>`](constructor)\n[`<init>`](constructor)", assertMarkdownDoc("io.vertx.test.linktosamenameconstructorandmethod"));
   }
 
   @Test
   public void testLinkWithLabel() throws Exception {
     assertEquals("`link:method[the label value]`", assertDoc("io.vertx.test.linkwithlabel"));
+    assertEquals("[`the label value`](method)", assertMarkdownDoc("io.vertx.test.linkwithlabel"));
   }
 
   @Test
@@ -727,6 +769,13 @@ public class BaseProcessorTest {
 
   private String assertDoc(String pkg) throws Exception {
     Compiler<TestGenProcessor> compiler = buildCompiler(new TestGenProcessor(), pkg);
+    compiler.assertCompile();
+    return compiler.processor.getDoc(pkg);
+  }
+
+  private String assertMarkdownDoc(String pkg) throws Exception {
+    Compiler<TestGenProcessor> compiler = buildCompiler(new TestGenProcessor(), pkg);
+    compiler.setOption("docgen.syntax", "markdown");
     compiler.assertCompile();
     return compiler.processor.getDoc(pkg);
   }
