@@ -12,6 +12,12 @@
   <artifactId>vertx-docgen</artifactId>
   <version>0.9.1-SNAPSHOT</version>
 
+  <scm>
+    <connection>scm:git:git@github.com:vert-x3/vertx-docgen.git</connection>
+    <developerConnection>scm:git:git@github.com:vert-x3/vertx-docgen.git</developerConnection>
+    <url>git@github.com:vert-x3/vertx-docgen.git</url>
+  </scm>
+
   <properties>
     <tools.jar>${java.home}/../lib/tools.jar</tools.jar>
   </properties>
