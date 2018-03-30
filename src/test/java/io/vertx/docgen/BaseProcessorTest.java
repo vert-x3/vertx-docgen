@@ -660,6 +660,13 @@ public class BaseProcessorTest {
   }
 
   @Test
+  public void testDocFileLinkAfterNewLine() throws Exception {
+    assertEquals(
+      "a\n`link:type[TheClass]` watch the space!",
+      assertDocFile("docs/linkafternewline.adoc").getDoc("linkafternewline.adoc"));
+  }
+
+  @Test
   public void testDocFileLinkWithLabel() throws Exception {
     assertEquals("<before>`link:type[the label value]`<after>", assertDocFile("docs/linkwithlabel.adoc").getDoc("linkwithlabel.adoc"));
   }

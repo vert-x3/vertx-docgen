@@ -59,6 +59,25 @@ public class DocWriterTest {
     assertEquals("", writer.render());
   }
 
+  @Test
+  public void testExec() throws IOException {
+    DocWriter writer = new DocWriter();
+    writer.literalMode();
+    writer.write("abc\n def");
+    writer.exec(() -> writer.write("\n ghi"));
+    writer.write("\n jkl");
+    assertEquals("abc\n def\nghi\n jkl", writer.render());
+  }
+
+  @Test
+  public void testExecAfterNewLine() throws IOException {
+    DocWriter writer = new DocWriter();
+    writer.write("abc\n");
+    writer.exec(() -> writer.write("def"));
+    writer.write(" ghi");
+    assertEquals("abc\ndef ghi", writer.render());
+  }
+
   private void assertCommentText(String actual, String expected) throws IOException {
     DocWriter writer = new DocWriter();
     writer.write(actual);
