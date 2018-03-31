@@ -45,12 +45,10 @@ class DocWriter extends Writer {
   }
 
   void exec(Runnable r) {
-    int st = status;
     boolean bl = literal;
-    status = 0;
     literal = false;
+    status = 0;
     r.run();
-    status = st;
     literal = bl;
   }
 
