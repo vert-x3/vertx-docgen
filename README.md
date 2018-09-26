@@ -1,6 +1,6 @@
 # Docgen
 
-[![Build Status](https://vertx.ci.cloudbees.com/buildStatus/icon?job=vert.x3-docgen)](https://vertx.ci.cloudbees.com/view/vert.x-3/job/vert.x3-docgen/)
+[![Build Status](https://travis-ci.org/vert-x3/vertx-docgen.svg?branch=master?branch=master)](https://travis-ci.org/vert-x3/vertx-docgen)
 
 ## Description
 
