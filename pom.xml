@@ -4,13 +4,13 @@
   <parent>
     <groupId>io.vertx</groupId>
     <artifactId>vertx-parent</artifactId>
-    <version>14</version>
+    <version>19</version>
   </parent>
 
   <modelVersion>4.0.0</modelVersion>
 
   <artifactId>vertx-docgen</artifactId>
-  <version>0.9.4-SNAPSHOT</version>
+  <version>0.9.3</version>
 
   <scm>
     <connection>scm:git:git@github.com:vert-x3/vertx-docgen.git</connection>
