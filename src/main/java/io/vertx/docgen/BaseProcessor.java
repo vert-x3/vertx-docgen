@@ -6,7 +6,6 @@ import com.sun.source.doctree.LiteralTree;
 import com.sun.source.util.DocTreeScanner;
 import com.sun.source.util.DocTrees;
 import com.sun.source.util.TreePath;
-import com.sun.tools.javac.code.Symbol;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;
@@ -21,8 +20,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.jar.Attributes;
-import java.util.jar.Manifest;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -260,45 +257,6 @@ public abstract class BaseProcessor extends AbstractProcessor {
     } else {
       return fileName;
     }
-  }
-
-  /**
-   * Resolve the coordinate of the type element, this method returns either:
-   * <ul>
-   * <li>a {@link io.vertx.docgen.Coordinate} object, the coordinate object can have null fields</li>
-   * <li>{@code null} : the current element is being compiled, which likely means create a local link</li>
-   * </ul>
-   *
-   * @param typeElt the type element to resolve
-   * @return the resolved coordinate object or null if the element is locally compiled
-   */
-  private Coordinate resolveCoordinate(TypeElement typeElt) {
-    try {
-      Symbol.ClassSymbol cs = (Symbol.ClassSymbol) typeElt;
-      if (cs.sourcefile != null && getURL(cs.sourcefile) != null) {
-        // .java source we can link locally
-        return null;
-      }
-      if (cs.classfile != null) {
-        JavaFileObject cf = cs.classfile;
-        URL classURL = getURL(cf);
-        if (classURL != null && classURL.getFile().endsWith(".class")) {
-          URL manifestURL = new URL(classURL.toString().substring(0, classURL.toString().length() - (typeElt.getQualifiedName().toString().length() + 6)) + "META-INF/MANIFEST.MF");
-          InputStream manifestIs = manifestURL.openStream();
-          if (manifestIs != null) {
-            Manifest manifest = new Manifest(manifestIs);
-            Attributes attributes = manifest.getMainAttributes();
-            String groupId = attributes.getValue(new Attributes.Name("Maven-Group-Id"));
-            String artifactId = attributes.getValue(new Attributes.Name("Maven-Artifact-Id"));
-            String version = attributes.getValue(new Attributes.Name("Maven-Version"));
-            return new Coordinate(groupId, artifactId, version);
-          }
-        }
-      }
-    } catch (Exception ignore) {
-      //
-    }
-    return new Coordinate(null, null, null);
   }
 
   private URL getURL(JavaFileObject fileObject) {
@@ -661,26 +619,26 @@ public abstract class BaseProcessor extends AbstractProcessor {
           case ANNOTATION_TYPE:
           case ENUM: {
             TypeElement typeElt = (TypeElement) elt;
-            link = generator.resolveTypeLink(typeElt, resolveCoordinate(typeElt));
+            link = generator.resolveTypeLink(typeElt, null);
             break;
           }
           case METHOD: {
             ExecutableElement methodElt = (ExecutableElement) elt;
             TypeElement typeElt = (TypeElement) methodElt.getEnclosingElement();
-            link = generator.resolveMethodLink(methodElt, resolveCoordinate(typeElt));
+            link = generator.resolveMethodLink(methodElt, null);
             break;
           }
           case CONSTRUCTOR: {
             ExecutableElement constructorElt = (ExecutableElement) elt;
             TypeElement typeElt = (TypeElement) constructorElt.getEnclosingElement();
-            link = generator.resolveConstructorLink(constructorElt, resolveCoordinate(typeElt));
+            link = generator.resolveConstructorLink(constructorElt, null);
             break;
           }
           case FIELD:
           case ENUM_CONSTANT: {
             VariableElement variableElt = (VariableElement) elt;
             TypeElement typeElt = (TypeElement) variableElt.getEnclosingElement();
-            link = generator.resolveFieldLink(variableElt, resolveCoordinate(typeElt));
+            link = generator.resolveFieldLink(variableElt, null);
             break;
           }
           default:

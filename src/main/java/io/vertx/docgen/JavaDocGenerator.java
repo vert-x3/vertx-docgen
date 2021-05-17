@@ -9,7 +9,6 @@ import com.sun.source.tree.StatementTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.util.DocTrees;
 import com.sun.source.util.TreePath;
-import com.sun.tools.javac.code.Type;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
@@ -22,6 +21,8 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Scanner;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -76,15 +77,20 @@ public class JavaDocGenerator implements DocGenerator {
       }
       // We need to check whether or not the parameter is annotated. In this case, we must use the unannotated type.
       TypeMirror typeOfParameter = parameterTypes.get(i);
-      if (typeOfParameter instanceof Type && ((Type) typeOfParameter).isAnnotated()) {
-        anchor.append(((Type) typeOfParameter).unannotatedType().toString());
+      String s = typeOfParameter.toString();
+      Matcher matcher = A.matcher(s);
+      if (matcher.matches()) {
+        String t = matcher.group(1);
+        anchor.append(t);
       } else {
-        anchor.append(typeOfParameter.toString());
+        anchor.append(s);
       }
     }
     anchor.append('-');
     return link + anchor;
   }
+
+  private static final Pattern A = Pattern.compile("^\\(@[^ ]+ :: ([^\\\\]+)\\)$");
 
   @Override
   public String resolveFieldLink(VariableElement elt, Coordinate coordinate) {
