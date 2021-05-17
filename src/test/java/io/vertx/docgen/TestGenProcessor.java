@@ -1,7 +1,6 @@
 package io.vertx.docgen;
 
 import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import java.util.HashMap;
@@ -22,20 +21,20 @@ public class TestGenProcessor extends JavaDocGenProcessor {
         return TestGenProcessor.this.getName();
       }
       @Override
-      public String resolveTypeLink(TypeElement elt, Coordinate coordinate) {
-        return TestGenProcessor.this.resolveTypeLink(elt, coordinate);
+      public String resolveTypeLink(TypeElement elt) {
+        return TestGenProcessor.this.resolveTypeLink(elt);
       }
       @Override
-      public String resolveConstructorLink(ExecutableElement elt, Coordinate coordinate) {
-        return TestGenProcessor.this.resolveConstructorLink(elt, coordinate);
+      public String resolveConstructorLink(ExecutableElement elt) {
+        return TestGenProcessor.this.resolveConstructorLink(elt);
       }
       @Override
-      public String resolveMethodLink(ExecutableElement elt, Coordinate coordinate) {
-        return TestGenProcessor.this.resolveMethodLink(elt, coordinate);
+      public String resolveMethodLink(ExecutableElement elt) {
+        return TestGenProcessor.this.resolveMethodLink(elt);
       }
       @Override
-      public String resolveFieldLink(VariableElement elt, Coordinate coordinate) {
-        return TestGenProcessor.this.resolveFieldLink(elt, coordinate);
+      public String resolveFieldLink(VariableElement elt) {
+        return TestGenProcessor.this.resolveFieldLink(elt);
       }
     };
   }
@@ -44,7 +43,7 @@ public class TestGenProcessor extends JavaDocGenProcessor {
     return "java";
   }
 
-  protected String resolveTypeLink(TypeElement elt, Coordinate coordinate) {
+  protected String resolveTypeLink(TypeElement elt) {
     switch (elt.getKind()) {
       case ANNOTATION_TYPE:
         return "annotation";
@@ -58,15 +57,15 @@ public class TestGenProcessor extends JavaDocGenProcessor {
     }
   }
 
-  protected String resolveConstructorLink(ExecutableElement elt, Coordinate coordinate) {
+  protected String resolveConstructorLink(ExecutableElement elt) {
     return "constructor";
   }
 
-  protected String resolveMethodLink(ExecutableElement elt, Coordinate coordinate) {
+  protected String resolveMethodLink(ExecutableElement elt) {
     return "method";
   }
 
-  protected String resolveFieldLink(VariableElement elt, Coordinate coordinate) {
+  protected String resolveFieldLink(VariableElement elt) {
     switch (elt.getKind()) {
       case ENUM_CONSTANT:
         return "enumConstant";

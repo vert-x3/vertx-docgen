@@ -619,26 +619,26 @@ public abstract class BaseProcessor extends AbstractProcessor {
           case ANNOTATION_TYPE:
           case ENUM: {
             TypeElement typeElt = (TypeElement) elt;
-            link = generator.resolveTypeLink(typeElt, null);
+            link = generator.resolveTypeLink(typeElt);
             break;
           }
           case METHOD: {
             ExecutableElement methodElt = (ExecutableElement) elt;
             TypeElement typeElt = (TypeElement) methodElt.getEnclosingElement();
-            link = generator.resolveMethodLink(methodElt, null);
+            link = generator.resolveMethodLink(methodElt);
             break;
           }
           case CONSTRUCTOR: {
             ExecutableElement constructorElt = (ExecutableElement) elt;
             TypeElement typeElt = (TypeElement) constructorElt.getEnclosingElement();
-            link = generator.resolveConstructorLink(constructorElt, null);
+            link = generator.resolveConstructorLink(constructorElt);
             break;
           }
           case FIELD:
           case ENUM_CONSTANT: {
             VariableElement variableElt = (VariableElement) elt;
             TypeElement typeElt = (TypeElement) variableElt.getEnclosingElement();
-            link = generator.resolveFieldLink(variableElt, null);
+            link = generator.resolveFieldLink(variableElt);
             break;
           }
           default:

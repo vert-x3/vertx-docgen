@@ -9,11 +9,8 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.tools.JavaFileObject;
-import javax.tools.StandardLocation;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.Writer;
 import java.net.URL;
 import java.nio.file.FileVisitResult;
@@ -23,8 +20,6 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.jar.Attributes;
-import java.util.jar.Manifest;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
@@ -426,7 +421,7 @@ public class BaseProcessorTest {
   public void testLinkUnresolved() throws Exception {
     Compiler<TestGenProcessor> compiler = buildCompiler(new TestGenProcessor() {
       @Override
-      protected String resolveTypeLink(TypeElement elt, Coordinate coordinate) {
+      protected String resolveTypeLink(TypeElement elt) {
         return null;
       }
     }, "io.vertx.test.linkunresolved");

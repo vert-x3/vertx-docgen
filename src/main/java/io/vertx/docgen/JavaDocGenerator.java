@@ -44,17 +44,17 @@ public class JavaDocGenerator implements DocGenerator {
   }
 
   @Override
-  public String resolveTypeLink(TypeElement elt, Coordinate coordinate) {
+  public String resolveTypeLink(TypeElement elt) {
     return "../../apidocs/" + elt.getQualifiedName().toString().replace('.', '/') + ".html";
   }
 
   @Override
-  public String resolveConstructorLink(ExecutableElement elt, Coordinate coordinate) {
+  public String resolveConstructorLink(ExecutableElement elt) {
     return toExecutableLink(elt, elt.getEnclosingElement().getSimpleName().toString());
   }
 
   @Override
-  public String resolveMethodLink(ExecutableElement elt, Coordinate coordinate) {
+  public String resolveMethodLink(ExecutableElement elt) {
     return toExecutableLink(elt, elt.getSimpleName().toString());
   }
 
@@ -65,7 +65,7 @@ public class JavaDocGenerator implements DocGenerator {
 
   private String toExecutableLink(ExecutableElement elt, String name) {
     TypeElement typeElt = (TypeElement) elt.getEnclosingElement();
-    String link = resolveTypeLink(typeElt, null);
+    String link = resolveTypeLink(typeElt);
     StringBuilder anchor = new StringBuilder("#");
     anchor.append(name).append('-');
     TypeMirror type = elt.asType();
@@ -93,9 +93,9 @@ public class JavaDocGenerator implements DocGenerator {
   private static final Pattern A = Pattern.compile("^\\(@[^ ]+ :: ([^\\\\]+)\\)$");
 
   @Override
-  public String resolveFieldLink(VariableElement elt, Coordinate coordinate) {
+  public String resolveFieldLink(VariableElement elt) {
     TypeElement typeElt = (TypeElement) elt.getEnclosingElement();
-    String link = resolveTypeLink(typeElt, null);
+    String link = resolveTypeLink(typeElt);
     return link + "#" + elt.getSimpleName();
   }
 

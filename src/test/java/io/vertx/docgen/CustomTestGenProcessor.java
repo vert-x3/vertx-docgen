@@ -18,7 +18,7 @@ public class CustomTestGenProcessor extends JavaDocGenProcessor {
   protected DocGenerator generator() {
     return new JavaDocGenerator() {
       @Override
-      public String resolveTypeLink(TypeElement elt, Coordinate coordinate) {
+      public String resolveTypeLink(TypeElement elt) {
         switch (elt.getKind()) {
           case INTERFACE:
           case CLASS:
@@ -31,17 +31,17 @@ public class CustomTestGenProcessor extends JavaDocGenProcessor {
       }
 
       @Override
-      public String resolveConstructorLink(ExecutableElement elt, Coordinate coordinate) {
+      public String resolveConstructorLink(ExecutableElement elt) {
         return "constructor";
       }
 
       @Override
-      public String resolveMethodLink(ExecutableElement elt, Coordinate coordinate) {
+      public String resolveMethodLink(ExecutableElement elt) {
         return "method";
       }
 
       @Override
-      public String resolveFieldLink(VariableElement elt, Coordinate coordinate) {
+      public String resolveFieldLink(VariableElement elt) {
         switch (elt.getKind()) {
           case ENUM_CONSTANT:
             return "enumConstant";

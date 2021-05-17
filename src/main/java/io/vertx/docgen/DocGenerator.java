@@ -51,37 +51,33 @@ public interface DocGenerator {
    * Resolve a constructor link.
    *
    * @param elt the element linked to
-   * @param coordinate the optional coordinate of the jar containing the element
    * @return the resolved http link or null if the link cannot be resolved
    */
-  String resolveTypeLink(TypeElement elt, Coordinate coordinate);
+  String resolveTypeLink(TypeElement elt);
 
   /**
    * Resolve a constructor link.
    *
    * @param elt the element linked to
-   * @param coordinate the optional coordinate of the jar containing the element
    * @return the resolved http link or null if the link cannot be resolved
    */
-  String resolveConstructorLink(ExecutableElement elt, Coordinate coordinate);
+  String resolveConstructorLink(ExecutableElement elt);
 
   /**
    * Resolve a method link.
    *
    * @param elt the element linked to
-   * @param coordinate the optional coordinate of the jar containing the element
    * @return the resolved http link or null if the link cannot be resolved
    */
-  String resolveMethodLink(ExecutableElement elt, Coordinate coordinate);
+  String resolveMethodLink(ExecutableElement elt);
 
   /**
    * Resolve a field link.
    *
    * @param elt the element linked to
-   * @param coordinate the optional coordinate of the jar containing the element
    * @return the resolved http link or null if the link cannot be resolved
    */
-  String resolveFieldLink(VariableElement elt, Coordinate coordinate);
+  String resolveFieldLink(VariableElement elt);
 
   /**
    * Resolve a label.
