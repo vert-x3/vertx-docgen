@@ -3,8 +3,8 @@
 
   <parent>
     <groupId>io.vertx</groupId>
-    <artifactId>vertx-parent</artifactId>
-    <version>19</version>
+    <artifactId>vertx5-parent</artifactId>
+    <version>3</version>
   </parent>
 
   <modelVersion>4.0.0</modelVersion>
@@ -31,12 +31,10 @@
           <artifactId>maven-compiler-plugin</artifactId>
           <version>3.13.0</version>
           <configuration>
-            <release>11</release>
             <proc>none</proc>
           </configuration>
         </plugin>
       </plugins>
     </pluginManagement>
   </build>
-
 </project>
