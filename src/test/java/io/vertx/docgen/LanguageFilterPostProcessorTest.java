@@ -1,5 +1,7 @@
 package io.vertx.docgen;
 
+import io.vertx.docgen.impl.LanguageFilterPostProcessor;
+import io.vertx.docgen.impl.PostProcessor;
 import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;

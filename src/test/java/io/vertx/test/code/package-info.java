@@ -4,4 +4,4 @@
 @Document
 package io.vertx.test.code;
 
-import io.vertx.docgen.Document;
+import io.vertx.docgen.impl.Document;

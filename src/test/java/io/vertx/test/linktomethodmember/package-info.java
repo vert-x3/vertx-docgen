@@ -4,4 +4,4 @@
 @Document
 package io.vertx.test.linktomethodmember;
 
-import io.vertx.docgen.Document;
+import io.vertx.docgen.impl.Document;

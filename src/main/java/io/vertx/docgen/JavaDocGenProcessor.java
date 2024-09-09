@@ -1,5 +1,9 @@
 package io.vertx.docgen;
 
+import io.vertx.docgen.impl.BaseProcessor;
+import io.vertx.docgen.impl.DocGenerator;
+import io.vertx.docgen.impl.JavaDocGenerator;
+
 import java.util.Collections;
 
 /**

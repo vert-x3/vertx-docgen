@@ -4,4 +4,4 @@
 @Document
 package io.vertx.test.linktomethodwithunresolvabletype;
 
-import io.vertx.docgen.Document;
+import io.vertx.docgen.impl.Document;

@@ -13,4 +13,4 @@
  */
 @Document() package io.vertx.test.postprocessors.code;
 
-import io.vertx.docgen.Document;
+import io.vertx.docgen.impl.Document;

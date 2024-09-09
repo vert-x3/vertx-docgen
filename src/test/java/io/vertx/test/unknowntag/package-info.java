@@ -6,4 +6,4 @@
 @Document
 package io.vertx.test.unknowntag;
 
-import io.vertx.docgen.Document;
+import io.vertx.docgen.impl.Document;

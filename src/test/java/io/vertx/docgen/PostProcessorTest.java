@@ -1,5 +1,6 @@
 package io.vertx.docgen;
 
+import io.vertx.docgen.impl.PostProcessor;
 import org.junit.Test;
 
 import java.util.Arrays;

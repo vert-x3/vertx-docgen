@@ -1,5 +1,6 @@
 package io.vertx.docgen;
 
+import io.vertx.docgen.impl.DocWriter;
 import org.junit.Test;
 
 import java.io.IOException;

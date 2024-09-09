@@ -1,9 +1,8 @@
 package io.vertx.docgen;
 
+import io.vertx.docgen.impl.EntityUtils;
 import org.junit.Assert;
 import org.junit.Test;
-
-import static org.junit.Assert.*;
 
 /**
  * Checks the behavior of the entity un-escaper.

@@ -9,8 +9,9 @@
 
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>vertx-docgen</artifactId>
+  <artifactId>vertx-docgen-parent</artifactId>
   <version>0.9.5-SNAPSHOT</version>
+  <packaging>pom</packaging>
 
   <scm>
     <connection>scm:git:git@github.com:vert-x3/vertx-docgen.git</connection>
@@ -18,49 +19,20 @@
     <url>git@github.com:vert-x3/vertx-docgen.git</url>
   </scm>
 
-  <properties>
-    <tools.jar>${java.home}/../lib/tools.jar</tools.jar>
-  </properties>
-
-  <dependencies>
-    <dependency>
-      <groupId>com.sun</groupId>
-      <artifactId>tools</artifactId>
-      <version>1.8</version>
-      <scope>system</scope>
-      <systemPath>${tools.jar}</systemPath>
-      <optional>true</optional>
-    </dependency>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.12</version>
-      <scope>test</scope>
-    </dependency>
-  </dependencies>
+  <modules>
+    <module>vertx-docgen-api</module>
+    <module>vertx-docgen-processor</module>
+  </modules>
 
   <build>
     <pluginManagement>
       <plugins>
-
-        <!-- Don't compile io.vertx.test since that's what our test resources -->
         <plugin>
           <artifactId>maven-compiler-plugin</artifactId>
-          <executions>
-            <execution>
-              <id>default-testCompile</id>
-              <configuration>
-                <testExcludes>
-                  <testExclude>io/vertx/test/**</testExclude>
-                </testExcludes>
-              </configuration>
-            </execution>
-          </executions>
-        </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-surefire-plugin</artifactId>
+          <version>3.13.0</version>
           <configuration>
+            <release>11</release>
+            <proc>none</proc>
           </configuration>
         </plugin>
       </plugins>

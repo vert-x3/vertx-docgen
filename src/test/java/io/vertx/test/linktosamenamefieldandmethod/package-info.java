@@ -5,4 +5,4 @@
 @Document
 package io.vertx.test.linktosamenamefieldandmethod;
 
-import io.vertx.docgen.Document;
+import io.vertx.docgen.impl.Document;

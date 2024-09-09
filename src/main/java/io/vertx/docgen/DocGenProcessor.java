@@ -1,5 +1,8 @@
 package io.vertx.docgen;
 
+import io.vertx.docgen.impl.BaseProcessor;
+import io.vertx.docgen.impl.DocGenerator;
+
 import javax.annotation.processing.ProcessingEnvironment;
 import java.util.ArrayList;
 import java.util.Arrays;

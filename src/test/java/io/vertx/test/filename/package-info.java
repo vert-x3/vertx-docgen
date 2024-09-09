@@ -4,4 +4,4 @@
 @Document(fileName = "index.adoc")
 package io.vertx.test.filename;
 
-import io.vertx.docgen.Document;
+import io.vertx.docgen.impl.Document;

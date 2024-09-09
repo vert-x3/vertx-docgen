@@ -3,9 +3,9 @@
  *
  * [test]
  * ----
- * This paragraph contains a link: {@link io.vertx.docgen.BaseProcessor}.
+ * This paragraph contains a link: {@link io.vertx.docgen.impl.BaseProcessor}.
  * ----
  */
 @Document() package io.vertx.test.postprocessors.links;
 
-import io.vertx.docgen.Document;
+import io.vertx.docgen.impl.Document;
