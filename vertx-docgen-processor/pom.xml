@@ -29,6 +29,14 @@
     <pluginManagement>
       <plugins>
 
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-javadoc-plugin</artifactId>
+          <configuration>
+            <legacyMode>false</legacyMode>
+          </configuration>
+        </plugin>
+
         <!-- Don't compile io.vertx.test since that's what our test resources -->
         <plugin>
           <artifactId>maven-compiler-plugin</artifactId>
