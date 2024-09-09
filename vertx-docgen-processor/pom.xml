@@ -40,6 +40,9 @@
         <!-- Don't compile io.vertx.test since that's what our test resources -->
         <plugin>
           <artifactId>maven-compiler-plugin</artifactId>
+          <configuration>
+            <proc>none</proc>
+          </configuration>
           <executions>
             <execution>
               <id>default-testCompile</id>
@@ -58,6 +61,31 @@
           <configuration>
             <useModulePath>false</useModulePath>
           </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-jar-plugin</artifactId>
+          <version>3.4.2</version>
+          <executions>
+            <execution>
+              <id>default-jar</id>
+              <configuration>
+                <excludes>
+                  <exclude>META-INF/services/**</exclude>
+                </excludes>
+              </configuration>
+            </execution>
+            <execution>
+              <id>processor-jar</id>
+              <goals>
+                <goal>jar</goal>
+              </goals>
+              <phase>package</phase>
+              <configuration>
+                <classifier>processor</classifier>
+              </configuration>
+            </execution>
+          </executions>
         </plugin>
       </plugins>
     </pluginManagement>
