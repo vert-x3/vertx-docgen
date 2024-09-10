@@ -12,4 +12,4 @@
  */
 @Document() package io.vertx.test.postprocessors.nested;
 
-import io.vertx.docgen.processor.impl.Document;
+import io.vertx.docgen.Document;

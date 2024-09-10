@@ -18,4 +18,4 @@
 @Document()
 package io.vertx.test.postprocessors.language;
 
-import io.vertx.docgen.processor.impl.Document;
+import io.vertx.docgen.Document;

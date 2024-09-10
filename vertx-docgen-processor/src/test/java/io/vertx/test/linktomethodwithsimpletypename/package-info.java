@@ -7,6 +7,6 @@
 @Document
 package io.vertx.test.linktomethodwithsimpletypename;
 
-import io.vertx.docgen.processor.impl.Document;
+import io.vertx.docgen.Document;
 
 import java.util.Locale;

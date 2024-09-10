@@ -1,4 +1,4 @@
-package io.vertx.docgen.processor.impl;
+package io.vertx.docgen;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

@@ -33,4 +33,4 @@
 @Document
 package io.vertx.test.source;
 
-import io.vertx.docgen.processor.impl.Document;
+import io.vertx.docgen.Document;

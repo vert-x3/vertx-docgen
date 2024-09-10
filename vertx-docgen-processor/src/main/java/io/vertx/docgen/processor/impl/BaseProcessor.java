@@ -6,6 +6,7 @@ import com.sun.source.doctree.LiteralTree;
 import com.sun.source.util.DocTreeScanner;
 import com.sun.source.util.DocTrees;
 import com.sun.source.util.TreePath;
+import io.vertx.docgen.Document;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;

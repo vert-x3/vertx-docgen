@@ -4,4 +4,4 @@
 @Document
 package io.vertx.test.includemethodfromannotatedclass;
 
-import io.vertx.docgen.processor.impl.Document;
+import io.vertx.docgen.Document;
