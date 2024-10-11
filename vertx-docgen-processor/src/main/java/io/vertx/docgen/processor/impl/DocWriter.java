@@ -16,11 +16,17 @@ public class DocWriter extends Writer {
   private final List<Object> chunks = new ArrayList<>();
   private int status;
   private boolean literal;
+  private boolean forceLiteral;
 
   public DocWriter() {
+    this(false);
+  }
+
+  public DocWriter(boolean forceLiteral) {
     this.delegate = new StringBuilder();
     this.status = 0;
-    this.literal = false;
+    this.literal = forceLiteral;
+    this.forceLiteral = forceLiteral;
   }
 
   public String render() {
@@ -69,7 +75,9 @@ public class DocWriter extends Writer {
    * because the javadoc text we obtain adds an extra space, except for the first time.
    */
   public void commentMode() {
-    literal = false;
+    if (!forceLiteral) {
+      literal = false;
+    }
   }
 
   public void write(Supplier<DocWriter> future) {

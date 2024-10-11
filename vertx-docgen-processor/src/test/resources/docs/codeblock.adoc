@@ -1,0 +1,24 @@
+This is a file with a code block. The indentation
+ should be kept.
+
+[source,xml]
+----
+<foo>
+  <bar />
+</foo>
+----
+
+ This is also a literal.
+
+This isn't.
+
+It should still work after an include.
+
+{@link io.vertx.test.file.TheExample#someMethod()}
+
+[source,xml]
+----
+<foo>
+  <bar />
+</foo>
+----

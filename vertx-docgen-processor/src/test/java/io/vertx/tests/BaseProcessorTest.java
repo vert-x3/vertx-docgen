@@ -618,6 +618,44 @@ public class BaseProcessorTest {
   }
 
   @Test
+  public void testDocFileCodeBlock() throws Exception {
+    assertEquals("This is a file with a code block. The indentation\n" +
+        " should be kept.\n" +
+        "\n" +
+        "[source,xml]\n" +
+        "----\n" +
+        "<foo>\n" +
+        "  <bar />\n" +
+        "</foo>\n" +
+        "----\n" +
+        "\n" +
+        " This is also a literal.\n" + 
+        "\n" +
+        "This isn't.\n" +
+        "\n" +
+        "It should still work after an include.\n" + 
+        "\n" +
+        "Map<String, String> map = new HashMap<>();\n" +
+        "// Some comment\n" +
+        "\n" +
+        "if (true) {\n" +
+        "  // Indented 1\n" +
+        "  if (false) {\n" +
+        "    // Indented 2\n" +
+        "  }\n" +
+        "}\n" +
+        "map.put(\"abc\", \"def\");\n" +
+        "map.get(\"abc\"); // Beyond last statement\n" +
+        "\n" +
+        "[source,xml]\n" +
+        "----\n" +
+        "<foo>\n" +
+        "  <bar />\n" +
+        "</foo>\n" +
+        "----", assertDocFile("docs/codeblock.adoc").getDoc("codeblock.adoc"));
+  }
+
+  @Test
   public void testDocFileWithLinkToUnresolvableType() throws Exception {
     Compiler<TestGenProcessor> compiler = buildCompiler(new TestGenProcessor(),  "io.vertx.test.file");
     compiler.setOption("docgen.source", docFile("docs/linktounresolvabletype.adoc").getAbsolutePath());
