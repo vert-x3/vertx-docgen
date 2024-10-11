@@ -231,7 +231,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
     Map<DocGenerator, DocWriter> map = new HashMap<>();
     for (DocGenerator generator : generators()) {
       generator.init(processingEnv);
-      DocWriter writer = new DocWriter();
+      DocWriter writer = new DocWriter(doc instanceof FileDoc);
       doc.process(generator, writer);
       map.put(generator, writer);
     }
