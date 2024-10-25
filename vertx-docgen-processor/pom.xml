@@ -4,7 +4,7 @@
   <parent>
     <groupId>io.vertx</groupId>
     <artifactId>vertx-docgen-parent</artifactId>
-    <version>0.9.8</version>
+    <version>0.9.9-SNAPSHOT</version>
   </parent>
 
   <modelVersion>4.0.0</modelVersion>
@@ -15,7 +15,7 @@
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-docgen-api</artifactId>
-      <version>0.9.8</version>
+      <version>0.9.9-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
