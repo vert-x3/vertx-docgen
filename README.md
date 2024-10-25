@@ -1,7 +1,5 @@
 # Docgen
 
-[![Build Status](https://travis-ci.org/vert-x3/vertx-docgen.svg?branch=master?branch=master)](https://travis-ci.org/vert-x3/vertx-docgen)
-
 ## Description
 
 Create an Asciidoc document from package Javadoc. It comes as an annotation processor that process the various
