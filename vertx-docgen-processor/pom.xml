@@ -11,6 +11,10 @@
 
   <artifactId>vertx-docgen-processor</artifactId>
 
+  <properties>
+    <vertx.surefire.useModulePath>false</vertx.surefire.useModulePath>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>io.vertx</groupId>
@@ -56,16 +60,7 @@
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-surefire-plugin</artifactId>
-          <version>3.3.0</version>
-          <configuration>
-            <useModulePath>false</useModulePath>
-          </configuration>
-        </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-jar-plugin</artifactId>
-          <version>3.4.2</version>
           <executions>
             <execution>
               <id>default-jar</id>
