@@ -4,7 +4,7 @@
   <parent>
     <groupId>io.vertx</groupId>
     <artifactId>vertx5-parent</artifactId>
-    <version>6</version>
+    <version>9</version>
   </parent>
 
   <modelVersion>4.0.0</modelVersion>
@@ -23,5 +23,42 @@
     <module>vertx-docgen-api</module>
     <module>vertx-docgen-processor</module>
   </modules>
+
+  <profiles>
+    <profile>
+      <id>sonatype-oss-release</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-enforcer-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>enforce-no-vertx-snapshots</id>
+                <goals>
+                  <goal>enforce</goal>
+                </goals>
+                <configuration>
+                  <rules>
+                    <requireJavaVersion>
+                      <message>Vert.x must be released with Java 8!</message>
+                      <version>[1.8,9)</version>
+                    </requireJavaVersion>
+                    <requireReleaseDeps>
+                      <message>No Vert.x Snapshots Allowed during a release!</message>
+                      <includes>
+                        <include>io.vertx:*</include>
+                      </includes>
+                    </requireReleaseDeps>
+                  </rules>
+                  <fail>true</fail>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 
 </project>
