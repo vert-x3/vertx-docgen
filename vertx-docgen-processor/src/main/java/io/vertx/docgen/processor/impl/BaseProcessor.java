@@ -32,6 +32,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
   private static final String DOCGEN_OUTPUT = "docgen.output", DOCGEN_EXTENSION = "docgen.extension",
     DOCGEN_SOURCE = "docgen.source", DOCGEN_SYNTAX = "docgen.syntax";
 
+  private boolean process;
   protected DocTrees docTrees;
   protected Helper helper;
   protected List<String> sources;
@@ -77,15 +78,22 @@ public abstract class BaseProcessor extends AbstractProcessor {
   @Override
   public synchronized void init(ProcessingEnvironment processingEnv) {
     super.init(processingEnv);
+    try {
+      docTrees = DocTrees.instance(processingEnv);
+    } catch (IllegalArgumentException e) {
+      // Not com.sun.tools.javac.processing.JavacProcessingEnvironment (javac)
+      // e.g. Intellij processor
+      return;
+    }
     String sourceOpt = processingEnv.getOptions().get(DOCGEN_SOURCE);
     if (sourceOpt != null) {
       sources = new ArrayList<>(Arrays.asList(sourceOpt.split("\\s*,\\s*")));
     }
-    docTrees = DocTrees.instance(processingEnv);
     helper = new Helper(processingEnv);
     String syntaxOpt = processingEnv.getOptions().get(DOCGEN_SYNTAX);
     this.syntax = "markdown".equals(syntaxOpt) ? Syntax.MARKDOWN : Syntax.ASCIIDOC;
     registerPostProcessor(new LanguageFilterPostProcessor());
+    process = true;
   }
 
   private String render(List<? extends DocTree> trees) {
@@ -105,11 +113,8 @@ public abstract class BaseProcessor extends AbstractProcessor {
 
   @Override
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-    StackTraceElement[] trace = Thread.currentThread().getStackTrace();
-    for (StackTraceElement elt : trace) {
-      if (elt.getClassName().startsWith("org.jetbrains")) {
-        return true;
-      }
+    if (!process) {
+      return true;
     }
     if (failures.isEmpty()) {
       try {
