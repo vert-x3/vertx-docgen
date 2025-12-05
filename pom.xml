@@ -13,6 +13,8 @@
   <version>0.9.9-SNAPSHOT</version>
   <packaging>pom</packaging>
 
+  <name>Vert.x Docgen Parent</name>
+
   <scm>
     <connection>scm:git:git@github.com:vert-x3/vertx-docgen.git</connection>
     <developerConnection>scm:git:git@github.com:vert-x3/vertx-docgen.git</developerConnection>

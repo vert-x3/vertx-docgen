@@ -11,6 +11,8 @@
 
   <artifactId>vertx-docgen-processor</artifactId>
 
+  <name>Vert.x Docgen Processor</name>
+
   <properties>
     <vertx.surefire.useModulePath>false</vertx.surefire.useModulePath>
   </properties>

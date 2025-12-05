@@ -11,6 +11,8 @@
 
   <artifactId>vertx-docgen-api</artifactId>
 
+  <name>Vert.x Docgen API</name>
+
   <dependencies>
     <dependency>
       <groupId>junit</groupId>
